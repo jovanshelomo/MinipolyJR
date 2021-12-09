@@ -39,6 +39,7 @@ typedef struct KartuProperty
   int hargaSewa[6];
   int hargaUpgrade;
   int color;
+  bool hanyaDua;
   struct ScreenCoordinate tandaKepemilikan; // tempat kepemilikan
   struct ScreenCoordinate lokasiRumah;
 } KartuProperty;
@@ -53,23 +54,23 @@ typedef struct Step
 
 typedef struct playerProperty
 {
-  struct KartuProperty kartuProperty;
-  int propertyGroup;
+  struct KartuProperty *kartuProperty;
   int jumlahRumah;
 } playerProperty;
 
 typedef struct Player
 {
-  char simbol; //ΩΘΔΠΣ
+  char simbol[3]; //"Ω", "Θ", "Δ", "Π", "Σ", "Ξ", "Φ", "Ψ"
   char nama[25];
+  int urutanBermain;
+  bool isBot;
+  bool isBangkrut;
   long long int uang;
   int posisi; // 0-39
-  ScreenCoordinate posisiLayar;
   bool punyaKartuBebasPenjara;
   int jumlahProperty;
-  playerProperty properties[];
+  playerProperty *properties;
 } Player;
-
 // list semua module yang terdapat pada program
 void gotoxy(int x, int y);
 
@@ -95,8 +96,12 @@ Dadu randomDadu();
 void printDadu(Dadu d, bool last);
 
 void resetGame();
-void initGame();
-void startGame();
+void initGame(Player *players, int *playerCount);
+void startGame(Player *players, int *playerCount);
+
+void initPlayerStats(Player players[], int playerCount);
+void renderPlayerStats(Player players[], int playerCount);
+void renderPlayerMoney(Player p, int color);
 
 // player
 void majuNLangkah(Player *p, int N);                         // berfungsi untuk memajukan player dari posisi sekarang ke posisi sekarang + N
@@ -106,53 +111,39 @@ void renderPosisiPlayer(Player *p, int sebelum, int posisi); // menghapus posisi
 int setLokasiPlayer(Player *p, int indexLokasi);
 
 void removeProperty(playerProperty properties[], int jumlahProperty, int index);
+void shufflePlayer(Player *players, int playerCount);
+void shuffleSymbol(Player *players, int playerCount);
+void swapString(char *str1, char *str2, int length);
 
-// warna: 23, 39, 232, 71, 87, 103, 55, 135
-/*
-int id;
-bool isProperty;
-bool isCompany;
-bool isStasion;
-int blockId;
-char code[3];
-int color;
-char nama[30];
-int hargaBeli;
-int hargaSewa[6];
-int hargaUpgrade;
-coordinate lokasiRumah;
-coordinate tandaKepemilikan;
-coordinate lokasiPlayer;
-  */
 KartuProperty kartuProp[28] = {
-    {PROPERTY_KOTA, 0, "MLB", "Melbourne", 60, {2, 10, 30, 90, 160, 250}, 50, 23, {17, 41}, {13, 40}},
-    {PROPERTY_KOTA, 0, "SYD", "Sydney", 60, {4, 20, 60, 180, 320, 450}, 50, 23, {17, 33}, {13, 32}},
-    {PROPERTY_STASION, -1, "PSN", "Pasar Senen", 200, {}, 0, 0, {17, 25}, {}},
-    {PROPERTY_KOTA, 1, "OSA", "Osaka", 100, {6, 30, 90, 270, 400, 550}, 50, 39, {17, 21}, {13, 20}},
-    {PROPERTY_KOTA, 1, "KYO", "Kyoto", 100, {6, 30, 90, 270, 400, 550}, 50, 39, {17, 13}, {13, 12}},
-    {PROPERTY_KOTA, 1, "TYO", "Tokyo", 120, {8, 40, 100, 300, 450, 600}, 50, 39, {17, 9}, {13, 8}},
-    {PROPERTY_KOTA, 2, "GZH", "Guangzhou", 140, {10, 50, 150, 450, 625, 750}, 100, 232, {19, 8}, {16, 6}},
-    {PROPERTY_PERUSAHAAN, -1, "PLN", "Perusahaan Listrik", 150, {}, 0, 0, {28, 8}, {}},
-    {PROPERTY_KOTA, 2, "BJG", "Beijing", 140, {10, 50, 150, 450, 625, 750}, 100, 232, {37, 8}, {34, 6}},
-    {PROPERTY_KOTA, 2, "SHG", "Shanghai", 160, {12, 60, 180, 500, 700, 900}, 100, 232, {46, 8}, {43, 6}},
-    {PROPERTY_STASION, -1, "GBG", "Gubeng", 200, {}, 0, 0, {55, 8}, {}},
-    {PROPERTY_KOTA, 3, "MSL", "Marseille", 180, {14, 70, 200, 550, 750, 950}, 100, 71, {64, 8}, {61, 6}},
-    {PROPERTY_KOTA, 3, "BDX", "Bordeaux", 180, {14, 70, 200, 550, 750, 950}, 100, 71, {82, 8}, {79, 6}},
-    {PROPERTY_KOTA, 3, "PAR", "Paris", 200, {16, 80, 220, 600, 800, 1000}, 100, 71, {91, 8}, {88, 6}},
-    {PROPERTY_KOTA, 4, "RTD", "Rotterdam", 220, {18, 90, 250, 700, 875, 1050}, 150, 87, {94, 9}, {97, 8}},
-    {PROPERTY_KOTA, 4, "DHG", "Den Haag", 220, {18, 90, 250, 700, 875, 1050}, 150, 87, {94, 17}, {97, 16}},
-    {PROPERTY_KOTA, 4, "AMS", "Amsterdam", 240, {20, 100, 300, 750, 925, 1100}, 150, 87, {94, 21}, {97, 20}},
-    {PROPERTY_STASION, -1, "STH", "ST. Hall", 200, {}, 0, 0, {94, 25}, {}},
-    {PROPERTY_KOTA, 5, "TPN", "Tampines", 260, {22, 110, 330, 800, 975, 1150}, 150, 103, {94, 29}, {97, 28}},
-    {PROPERTY_KOTA, 5, "JRG", "Jurong", 260, {22, 110, 330, 800, 975, 1150}, 150, 103, {94, 34}, {97, 32}},
-    {PROPERTY_PERUSAHAAN, -1, "WTR", "PDAM", 150, {}, 0, 0, {94, 37}, {}},
-    {PROPERTY_KOTA, 5, "SGP", "Singapore", 280, {24, 120, 360, 850, 1025, 1200}, 150, 103, {94, 41}, {97, 40}},
-    {PROPERTY_KOTA, 6, "CCG", "Chicago", 300, {26, 130, 390, 900, 1100, 1275}, 200, 55, {91, 42}, {88, 44}},
-    {PROPERTY_KOTA, 6, "LAG", "Los Angeles", 300, {26, 130, 390, 900, 1100, 1275}, 200, 55, {82, 42}, {79, 44}},
-    {PROPERTY_KOTA, 6, "NYC", "New York", 320, {28, 150, 450, 1000, 1200, 1400}, 200, 55, {65, 42}, {61, 44}},
-    {PROPERTY_STASION, -1, "GBR", "Gambir", 200, {}, 0, 0, {55, 42}, {}},
-    {PROPERTY_KOTA, 7, "BDG", "Bandung", 350, {35, 175, 500, 1100, 1300, 1500}, 200, 135, {37, 42}, {34, 44}},
-    {PROPERTY_KOTA, 7, "JKT", "Jakarta", 400, {40, 185, 550, 1200, 1500, 1700}, 200, 135, {19, 42}, {16, 44}}};
+    {PROPERTY_KOTA, 0, "MLB", "Melbourne", 60, {2, 10, 30, 90, 160, 250}, 50, 23, true, {17, 41}, {13, 40}},
+    {PROPERTY_KOTA, 0, "SYD", "Sydney", 60, {4, 20, 60, 180, 320, 450}, 50, 23, false, {17, 33}, {13, 32}},
+    {PROPERTY_STASION, -1, "PSN", "Pasar Senen", 200, {}, 0, 0, false, {17, 25}, {}},
+    {PROPERTY_KOTA, 1, "OSA", "Osaka", 100, {6, 30, 90, 270, 400, 550}, 50, 39, false, {17, 21}, {13, 20}},
+    {PROPERTY_KOTA, 1, "KYO", "Kyoto", 100, {6, 30, 90, 270, 400, 550}, 50, 39, false, {17, 13}, {13, 12}},
+    {PROPERTY_KOTA, 1, "TYO", "Tokyo", 120, {8, 40, 100, 300, 450, 600}, 50, 39, false, {17, 9}, {13, 8}},
+    {PROPERTY_KOTA, 2, "GZH", "Guangzhou", 140, {10, 50, 150, 450, 625, 750}, 100, 232, false, {19, 8}, {16, 6}},
+    {PROPERTY_PERUSAHAAN, -1, "PLN", "Perusahaan Listrik", 150, {}, 0, 0, false, {28, 8}, {}},
+    {PROPERTY_KOTA, 2, "BJG", "Beijing", 140, {10, 50, 150, 450, 625, 750}, 100, 232, false, {37, 8}, {34, 6}},
+    {PROPERTY_KOTA, 2, "SHG", "Shanghai", 160, {12, 60, 180, 500, 700, 900}, 100, 232, false, {46, 8}, {43, 6}},
+    {PROPERTY_STASION, -1, "GBG", "Gubeng", 200, {}, 0, 0, false, {55, 8}, {}},
+    {PROPERTY_KOTA, 3, "MSL", "Marseille", 180, {14, 70, 200, 550, 750, 950}, 100, 71, false, {64, 8}, {61, 6}},
+    {PROPERTY_KOTA, 3, "BDX", "Bordeaux", 180, {14, 70, 200, 550, 750, 950}, 100, 71, false, {82, 8}, {79, 6}},
+    {PROPERTY_KOTA, 3, "PAR", "Paris", 200, {16, 80, 220, 600, 800, 1000}, 100, 71, false, {91, 8}, {88, 6}},
+    {PROPERTY_KOTA, 4, "RTD", "Rotterdam", 220, {18, 90, 250, 700, 875, 1050}, 150, 87, false, {94, 9}, {97, 8}},
+    {PROPERTY_KOTA, 4, "DHG", "Den Haag", 220, {18, 90, 250, 700, 875, 1050}, 150, 87, false, {94, 17}, {97, 16}},
+    {PROPERTY_KOTA, 4, "AMS", "Amsterdam", 240, {20, 100, 300, 750, 925, 1100}, 150, 87, false, {94, 21}, {97, 20}},
+    {PROPERTY_STASION, -1, "STH", "ST. Hall", 200, {}, 0, 0, false, {94, 25}, {}},
+    {PROPERTY_KOTA, 5, "TPN", "Tampines", 260, {22, 110, 330, 800, 975, 1150}, 150, 103, false, {94, 29}, {97, 28}},
+    {PROPERTY_KOTA, 5, "JRG", "Jurong", 260, {22, 110, 330, 800, 975, 1150}, 150, 103, false, {94, 34}, {97, 32}},
+    {PROPERTY_PERUSAHAAN, -1, "WTR", "PDAM", 150, {}, 0, 0, false, {94, 37}, {}},
+    {PROPERTY_KOTA, 5, "SGP", "Singapore", 280, {24, 120, 360, 850, 1025, 1200}, 150, 103, false, {94, 41}, {97, 40}},
+    {PROPERTY_KOTA, 6, "CCG", "Chicago", 300, {26, 130, 390, 900, 1100, 1275}, 200, 55, false, {91, 42}, {88, 44}},
+    {PROPERTY_KOTA, 6, "LAG", "Los Angeles", 300, {26, 130, 390, 900, 1100, 1275}, 200, 55, false, {82, 42}, {79, 44}},
+    {PROPERTY_KOTA, 6, "NYC", "New York", 320, {28, 150, 450, 1000, 1200, 1400}, 200, 55, false, {65, 42}, {61, 44}},
+    {PROPERTY_STASION, -1, "GBR", "Gambir", 200, {}, 0, 0, false, {55, 42}, {}},
+    {PROPERTY_KOTA, 7, "BDG", "Bandung", 350, {35, 175, 500, 1100, 1300, 1500}, 200, 135, false, {37, 42}, {34, 44}},
+    {PROPERTY_KOTA, 7, "JKT", "Jakarta", 400, {40, 185, 550, 1200, 1500, 1700}, 200, 135, true, {19, 42}, {16, 44}}};
 
 Step listStep[40] = {
     {0, {6, 44}, "GO", NULL},
@@ -215,13 +206,18 @@ int main()
   int selection = selectionMenu(startNotSelectedMenuString, startSelectedMenuString, 2, 32, 7);
   if (selection == 0) // start
   {
-    initGame();
+    Player players[4];
+    int playerCount = 0;
+    initGame(players, &playerCount);
+
+    // main game
+    startGame(players, &playerCount);
   }
   else if (selection == 1) // how to play
   {
-    printf("tesssss");
+    printf("ini how to play");
   }
-  else
+  else // quit
   {
     printf("quitting the game...");
     delay(1000);
@@ -483,7 +479,8 @@ int keyboardInputHandler()
   }
 }
 
-void clearArea(int xStart, int yStart, int xEnd, int yEnd){
+void clearArea(int xStart, int yStart, int xEnd, int yEnd)
+{
   for (int i = yStart; i <= yEnd; i++)
   {
     gotoxy(xStart, i);
@@ -581,7 +578,7 @@ void resetGame()
   // TODO reset stats player nya
 }
 
-void initGame()
+void initGame(Player *players, int *playerCount)
 {
   char NotSelectedPlayerCount[][30] = {"  2 PLAYER  ",
                                        "  3 PLAYER  ",
@@ -589,14 +586,137 @@ void initGame()
   char SelectedPlayerCount[][30] = {"▶ 2 PLAYER ◀",
                                     "▶ 3 PLAYER ◀",
                                     "▶ 4 PLAYER ◀"};
-  int selection = selectionMenu(NotSelectedPlayerCount, SelectedPlayerCount, 2, 32, 7);
-  // TODO minta jumlah player, minta nama player, random player
+  int selection = selectionMenu(NotSelectedPlayerCount, SelectedPlayerCount, 2, 34, 7);
+  *playerCount = selection + 2;
+  clearArea(0, 7, 72, 10);
+
+  char notSelectedBotCount[][30] = {"  Tanpa Bot  ",
+                                    "    1 BOT     ",
+                                    "    2 BOT     ",
+                                    "    3 BOT     "};
+  char SelectedBotCount[][30] = {"▶ Tanpa Bot ◀",
+                                 "  ▶ 1 BOT ◀   ",
+                                 "  ▶ 2 BOT ◀   ",
+                                 "  ▶ 3 BOT ◀   "};
+  int selectionBot = selectionMenu(notSelectedBotCount, SelectedBotCount, selection + 1, 33, 7);
+  clearArea(0, 7, 72, 10);
+  gotoxy(12, 7);
+  printf("Tentukan nama pemain manusia");
+  for (int i = 1; i <= *playerCount - selectionBot; i++)
+  {
+    players[i - 1].isBot = false;
+
+    gotoxy(12, 8 + i);
+    printf("Nama pemain %d: ", i);
+    scanf("%[^\n]", players[i - 1].nama);
+    getchar();
+  }
+  for (int i = *playerCount - selectionBot + 1; i <= *playerCount; i++)
+  {
+    players[i - 1].isBot = true;
+
+    snprintf(players[i - 1].nama, sizeof(players[i - 1].nama), "Bot %d", i);
+  }
+  gotoxy(12, 9 + *playerCount - selectionBot);
+  printf("Mengacak urutan permainan...\n");
+  shufflePlayer(players, *playerCount);
+  shuffleSymbol(players, *playerCount);
+  delay(800);
+  for (int i = 0; i < *playerCount; i++)
+  {
+    players[i].uang = 1500;
+    players[i].urutanBermain = i;
+    players[i].posisi = 0;
+    players[i].punyaKartuBebasPenjara = false;
+    players[i].isBangkrut = false;
+    players[i].jumlahProperty = 0;
+    players[i].properties = (playerProperty *)malloc(sizeof(playerProperty) * 28); // set properties untuk tiap player sebanyak max 28 karena properties hanya ada 28
+  }
+  gotoxy(12, 10 + *playerCount - selectionBot);
+  printf("urutan pemain:");
+  for (int i = 0; i < *playerCount; i++)
+  {
+    gotoxy(12, 11 + *playerCount - selectionBot + i);
+    printf("%d. (%s) %s\n", i + 1, players[i].simbol, players[i].nama);
+  }
+  printf("Tekan apapun untuk melanjutkan...");
+  getchar();
 }
 
-void startGame()
+void startGame(Player *players, int *playerCount)
 {
+  system("cls");
+  gotoxy(0, 0);
   printBoard();
+  initPlayerStats(players, *playerCount);
+  for (int i = 0; i < *playerCount; i++)
+  {
+    renderPosisiPlayer(&players[i], 0, 0);
+  }
+  int pemainTersisa = *playerCount;
+
+  getchar();
   // TODO print player nya
+}
+
+void initPlayerStats(Player players[], int playerCount)
+{
+  char statsTemplate[][100] = {"┌─────────────STATS─────────────┐",
+                               "│                               │",
+                               "│                               │",
+                               "│                               │",
+                               "│                               │",
+                               "│                               │",
+                               "│                               │",
+                               "│                               │",
+                               "│                               │",
+                               "│                               │",
+                               "│                               │",
+                               "│                               │",
+                               "└───────────────────────────────┘"};
+
+  for (int i = 0; i < 13; i++)
+  {
+    gotoxy(116, 0 + i);
+    printf("%s", statsTemplate[i]);
+  }
+  for (int i = 0; i < playerCount; i++)
+  {
+    gotoxy(118, 1 + (players[i].urutanBermain * 3));
+    printf("%s", players[i].nama);
+    gotoxy(144, 1 + (players[i].urutanBermain * 3));
+    printf("(%s)", players[i].simbol);
+    renderPlayerMoney(players[i], 7);
+  }
+}
+
+void renderPlayerMoney(Player p, int color)
+{
+  gotoxy(118, 2 + (p.urutanBermain * 3));
+  printWithColor(color, "$%lld", p.uang);
+}
+
+void majuNLangkah(Player *p, int N)
+{
+  for (int i = 0; i < N; i++)
+  {
+    int posisiSebelum = p->posisi;
+    int posisiSesesudah = rotateIndex(p->posisi, 39, true);
+    // TODO cek posisi 0, kalo ya kasih uang 200
+    renderPosisiPlayer(p, posisiSebelum, posisiSesesudah);
+  }
+}
+void lompatKe(Player *p, int index)
+{
+  p->posisi = index;
+}
+
+void renderPosisiPlayer(Player *p, int sebelum, int posisi)
+{
+  gotoxy(listStep[sebelum].lokasiPlayer.x + p->urutanBermain, listStep[sebelum].lokasiPlayer.y);
+  printf(" ");
+  gotoxy(listStep[posisi].lokasiPlayer.x + p->urutanBermain, listStep[posisi].lokasiPlayer.y);
+  printf("%s", p->simbol);
 }
 
 void removeProperty(playerProperty properties[], int jumlahProperty, int index)
@@ -605,5 +725,33 @@ void removeProperty(playerProperty properties[], int jumlahProperty, int index)
   for (int i = index; i < jumlahProperty - 1; i++)
   {
     properties[i] = properties[i + 1];
+  }
+}
+
+void shufflePlayer(Player *players, int playerCount)
+{
+  for (int i = 0; i < playerCount; i++)
+  {
+    int random = rand() % playerCount;
+    Player temp = players[i];
+    players[i] = players[random];
+    players[random] = temp;
+  }
+}
+
+void shuffleSymbol(Player *players, int playerCount)
+{
+  char simbol[][3] = {"Ω", "Θ", "Δ", "Π", "Σ", "Ξ", "Φ", "Ψ"};
+  int randomIndex[] = {0, 1, 2, 3, 4, 5, 6, 7};
+  for (int i = 0; i < 7; i++)
+  {
+    int random = rand() % 8;
+    int temp = randomIndex[i];
+    randomIndex[i] = randomIndex[random];
+    randomIndex[random] = temp;
+  }
+  for (int i = 0; i < playerCount; i++)
+  {
+    strcpy(players[i].simbol, simbol[randomIndex[i]]);
   }
 }
