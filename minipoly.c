@@ -101,6 +101,7 @@ void startGame(Player *players, int *playerCount);
 
 void initPlayerStats(Player players[], int playerCount);
 void renderPlayerStats(Player players[], int playerCount);
+int changePlayerMoney(Player *player, int jumlahUang); // positif kalo nambah, negatif kalo kurang
 void renderPlayerMoney(Player p, int color);
 
 // player
@@ -134,16 +135,16 @@ KartuProperty kartuProp[28] = {
     {PROPERTY_KOTA, 4, "DHG", "Den Haag", 220, {18, 90, 250, 700, 875, 1050}, 150, 87, false, {94, 17}, {97, 16}},
     {PROPERTY_KOTA, 4, "AMS", "Amsterdam", 240, {20, 100, 300, 750, 925, 1100}, 150, 87, false, {94, 21}, {97, 20}},
     {PROPERTY_STASION, -1, "STH", "ST. Hall", 200, {}, 0, 0, false, {94, 25}, {}},
-    {PROPERTY_KOTA, 5, "TPN", "Tampines", 260, {22, 110, 330, 800, 975, 1150}, 150, 103, false, {94, 29}, {97, 28}},
-    {PROPERTY_KOTA, 5, "JRG", "Jurong", 260, {22, 110, 330, 800, 975, 1150}, 150, 103, false, {94, 34}, {97, 32}},
+    {PROPERTY_KOTA, 5, "TPN", "Tampines", 260, {22, 110, 330, 800, 975, 1150}, 150, 135, false, {94, 29}, {97, 28}},
+    {PROPERTY_KOTA, 5, "JRG", "Jurong", 260, {22, 110, 330, 800, 975, 1150}, 150, 135, false, {94, 34}, {97, 32}},
     {PROPERTY_PERUSAHAAN, -1, "WTR", "PDAM", 150, {}, 0, 0, false, {94, 37}, {}},
-    {PROPERTY_KOTA, 5, "SGP", "Singapore", 280, {24, 120, 360, 850, 1025, 1200}, 150, 103, false, {94, 41}, {97, 40}},
+    {PROPERTY_KOTA, 5, "SGP", "Singapore", 280, {24, 120, 360, 850, 1025, 1200}, 150, 135, false, {94, 41}, {97, 40}},
     {PROPERTY_KOTA, 6, "CCG", "Chicago", 300, {26, 130, 390, 900, 1100, 1275}, 200, 55, false, {91, 42}, {88, 44}},
     {PROPERTY_KOTA, 6, "LAG", "Los Angeles", 300, {26, 130, 390, 900, 1100, 1275}, 200, 55, false, {82, 42}, {79, 44}},
     {PROPERTY_KOTA, 6, "NYC", "New York", 320, {28, 150, 450, 1000, 1200, 1400}, 200, 55, false, {65, 42}, {61, 44}},
     {PROPERTY_STASION, -1, "GBR", "Gambir", 200, {}, 0, 0, false, {55, 42}, {}},
-    {PROPERTY_KOTA, 7, "BDG", "Bandung", 350, {35, 175, 500, 1100, 1300, 1500}, 200, 135, false, {37, 42}, {34, 44}},
-    {PROPERTY_KOTA, 7, "JKT", "Jakarta", 400, {40, 185, 550, 1200, 1500, 1700}, 200, 135, true, {19, 42}, {16, 44}}};
+    {PROPERTY_KOTA, 7, "BDG", "Bandung", 350, {35, 175, 500, 1100, 1300, 1500}, 200, 103, false, {37, 42}, {34, 44}},
+    {PROPERTY_KOTA, 7, "JKT", "Jakarta", 400, {40, 185, 550, 1200, 1500, 1700}, 200, 103, true, {19, 42}, {16, 44}}};
 
 Step listStep[40] = {
     {0, {6, 44}, "GO", NULL},
@@ -639,6 +640,7 @@ void initGame(Player *players, int *playerCount)
     gotoxy(12, 11 + *playerCount - selectionBot + i);
     printf("%d. (%s) %s\n", i + 1, players[i].simbol, players[i].nama);
   }
+  gotoxy(12, 11 + *playerCount * 2 - selectionBot);
   printf("Tekan apapun untuk melanjutkan...");
   getchar();
 }
@@ -654,9 +656,10 @@ void startGame(Player *players, int *playerCount)
     renderPosisiPlayer(&players[i], 0, 0);
   }
   int pemainTersisa = *playerCount;
-
+  // delay(1000);
+  // changePlayerMoney(&players[1], -500);
+  // changePlayerMoney(&players[2], 500);
   getchar();
-  // TODO print player nya
 }
 
 void initPlayerStats(Player players[], int playerCount)
@@ -688,6 +691,33 @@ void initPlayerStats(Player players[], int playerCount)
     printf("(%s)", players[i].simbol);
     renderPlayerMoney(players[i], 7);
   }
+}
+
+int changePlayerMoney(Player *player, int jumlah)
+{
+  if (jumlah < 0)
+  {
+    for (int i = 0; i < abs(jumlah); i++)
+    {
+      if (player->uang > 0)
+      {
+        player->uang--;
+      }
+      renderPlayerMoney(*player, 4);
+      delay(1);
+    }
+  }
+  else
+  {
+    for (int i = 0; i < abs(jumlah); i++)
+    {
+      player->uang++;
+      renderPlayerMoney(*player, 2);
+      delay(1);
+    }
+  }
+  renderPlayerMoney(*player, 7);
+  return player->uang;
 }
 
 void renderPlayerMoney(Player p, int color)
