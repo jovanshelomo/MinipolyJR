@@ -1,5 +1,5 @@
 # MinipolyJR
 
-MinipolyJR merupakan permmainan yang terinspirasi dari monopoli tetapi dibuat dengan menggunakan bahasa C
+MinipolyJR merupakan permainan yang terinspirasi dari monopoli tetapi dibuat dengan menggunakan bahasa C
 
-Download [minipoly.exe](https://github.com/jovanshelomo/MinipolyJR/raw/main/minipoly.exe) untuk langsung memainkan
+Download [minipoly.exe](https://github.com/jovanshelomo/MinipolyJR/raw/main/minipoly.exe) untuk langsung merasakan keseruannya
