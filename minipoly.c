@@ -6,13 +6,14 @@
 #include <Windows.h>
 #include <stdbool.h>
 
-// mendefinisikan key pada keyboard
+// mendefinisikan key pada keyboard untuk _getch()
 #define ARROW_UP 72
 #define ARROW_DOWN 80
 #define ARROW_LEFT 75
 #define ARROW_RIGHT 77
 #define KEY_ENTER 13
 
+// mendefinisikan properti
 #define PROPERTY_KOTA "PROPERTY_KOTA"
 #define PROPERTY_STASION "PROPERTY_STASION"
 #define PROPERTY_PERUSAHAAN "PROPERTY_PERUSAHAAN"
@@ -31,16 +32,17 @@ typedef struct ScreenCoordinate
 
 typedef struct KartuProperty
 {
-  char *jenisProperty;
-  int blockId;
-  char code[3];
-  char nama[30];
-  int hargaBeli; // harga beli property yang ada di papan
-  int hargaSewa[6];
-  int hargaUpgrade;
-  int color;
-  bool hanyaDua;
+  char *jenisProperty; // jenis properti seperti PROPERTI_KOTA, PROPERTY_STASION, PROPERTY_PERUSAHAAN
+  int kompleksId;      // id block yang sejenis
+  char kodeKota[3];
+  char namaKota[30];
+  int hargaBeli;                            // harga beli property yang ada di papan
+  int hargaSewa[6];                         // harga sewa untuk setiap tingkatan (sewa, 1 rumah, 2 rumah, 3 rumah, 4 rumah, hotel)
+  int hargaUpgrade;                         // harga rumah & hotel
+  int color;                                // warna pada kompleks
+  bool hanyaDua;                            // true jika property hanya terdapat 2 buah pada 1 kompleks
   struct ScreenCoordinate tandaKepemilikan; // tempat kepemilikan
+  struct ScreenCoordinate tandaWarna;
   struct ScreenCoordinate lokasiRumah;
 } KartuProperty;
 
@@ -60,44 +62,54 @@ typedef struct playerProperty
 
 typedef struct Player
 {
-  char simbol[3]; //"Ω", "Θ", "Δ", "Π", "Σ", "Ξ", "Φ", "Ψ"
-  char nama[25];
-  int urutanBermain;
-  bool isBot;
-  bool isBangkrut;
-  long long int uang;
-  int posisi; // 0-39
-  bool punyaKartuBebasPenjara;
-  int jumlahProperty;
-  playerProperty *properties;
+  char simbol[3];              //"Ω", "Θ", "Δ", "Π", "Σ", "Ξ", "Φ", "Ψ"
+  char nama[25];               // nama player
+  int urutanBermain;           // urutan bermain
+  bool isBot;                  // true jika player bot
+  bool isBangkrut;             // true jika player sudah bangkrut
+  long long int uang;          // jumlah uang player
+  int posisi;                  // posisi di papan (0-39)
+  bool punyaKartuBebasPenjara; // true jika punya kartu bebas penjara
+  int jumlahProperty;          // jumlah property yang dimiliki
+  playerProperty *properties;  // property yang dimiliki
 } Player;
-// list semua module yang terdapat pada program
-void gotoxy(int x, int y);
 
+// list semua module yang terdapat pada program
+
+// list modul tidak terkait dengan game
+void gotoxy(int x, int y);
 void delay(int ms);
 void setColor(int color);
 void hideCursor();
 void showCursor();
+int getScreenBottomIndex();
+int getScreenRightIndex();
+void clearArea(int xStart, int yStart, int xEnd, int yEnd);
+int rotateIndex(int currentIndex, int maxIndex, bool isPlus);     // berfungsi untuk merotasi index jika sudah terakhir atau ke paling atas
+void printTengah(char *teks, int x, int y, int lebar, int color); // untuk memprint teks di tengah
+int keyboardArrowEnterHandler();                                  // menghandle keyboard arrow dan enter
+void waitForEnter();
 
-int rotateIndex(int currentIndex, int maxIndex, bool isPlus); // berfungsi untuk merotasi index jika sudah terakhir atau ke paling atas
+// list modul terkait dengan game
 void renderLogo();
 int startMenuSelection();
 void renderStartSelectionMenu();
-void printTengah(char *teks, int x, int y, int lebar, int color);
 int selectionMenu(char notSelectedStrings[][30], char selectedStrings[][30], int maxIndex, int x, int y);
 int renderSelectionMenu(char notSelectedStrings[][30], char selectedStrings[][30], int selected, int maxIndex, int x, int y);
 void printBoard();
-int keyboardInputHandler();
-void clearArea(int xStart, int yStart, int xEnd, int yEnd);
+
+void waitForKey(int key);
 
 // dadu
 Dadu kocokDadu();
 Dadu randomDadu();
 void printDadu(Dadu d, bool last);
+int getJumlahDadu(Dadu d);
+bool isDouble(Dadu d);
 
 void resetGame();
 void initGame(Player *players, int *playerCount);
-void startGame(Player *players, int *playerCount);
+void startGame(Player *players, int *playerCount, int propertyOwnership[40]);
 
 void initPlayerStats(Player players[], int playerCount);
 void renderPlayerStats(Player players[], int playerCount);
@@ -105,46 +117,66 @@ int changePlayerMoney(Player *player, int jumlahUang); // positif kalo nambah, n
 void renderPlayerMoney(Player p, int color);
 
 // player
-void majuNLangkah(Player *p, int N);                         // berfungsi untuk memajukan player dari posisi sekarang ke posisi sekarang + N
-void lompatKe(Player *p, int index);                         // berfungsi untuk melompatkan player tanpa berjalan memutar
-void majuHingga(Player *p, int index);                       // berfungsi untuk memajukan player hingga posisi N
-void renderPosisiPlayer(Player *p, int sebelum, int posisi); // menghapus posisi player sebelumnya dan menampilkan yang baru
+void majuNLangkah(Player *p, int N);             // berfungsi untuk memajukan player dari posisi sekarang ke posisi sekarang + N
+void lompatKe(Player *p, int index);             // berfungsi untuk melompatkan player tanpa berjalan memutar
+void majuHingga(Player *p, int index);           // berfungsi untuk memajukan player hingga posisi N
+void renderPosisiPlayer(Player *p, int sebelum); // menghapus posisi player sebelumnya dan menampilkan yang baru
 int setLokasiPlayer(Player *p, int indexLokasi);
+void lompatKePenjara(Player *p);
 
+// kartu kesempatan dan dana umum
+void kartuKesempatanHandler(Player *p);
+void kartuDanaUmumHandler(Player *p);
+void renderKartuKesempatan(char *text);
+void renderKartuDanaUmum(char *text);
+
+// dalam permainan
+void turnManager(Player *p);
+
+// handler di petak
+void propertyHandler(Player *players, int giliran, int step, int *propertyOwnership);
+void specialHandler(Player *players, int giliran, char special[30]);
+
+// property
+void renderKartuProperty(KartuProperty *kartuProperty);
+void clearKartu();
+
+void renderRumahHotel(KartuProperty *kartuProperty, int level);
+
+void renderKeyboardInstruction();
 void removeProperty(playerProperty properties[], int jumlahProperty, int index);
 void shufflePlayer(Player *players, int playerCount);
 void shuffleSymbol(Player *players, int playerCount);
-void swapString(char *str1, char *str2, int length);
 
 KartuProperty kartuProp[28] = {
-    {PROPERTY_KOTA, 0, "MLB", "Melbourne", 60, {2, 10, 30, 90, 160, 250}, 50, 23, true, {17, 41}, {13, 40}},
-    {PROPERTY_KOTA, 0, "SYD", "Sydney", 60, {4, 20, 60, 180, 320, 450}, 50, 23, false, {17, 33}, {13, 32}},
-    {PROPERTY_STASION, -1, "PSN", "Pasar Senen", 200, {}, 0, 0, false, {17, 25}, {}},
-    {PROPERTY_KOTA, 1, "OSA", "Osaka", 100, {6, 30, 90, 270, 400, 550}, 50, 39, false, {17, 21}, {13, 20}},
-    {PROPERTY_KOTA, 1, "KYO", "Kyoto", 100, {6, 30, 90, 270, 400, 550}, 50, 39, false, {17, 13}, {13, 12}},
-    {PROPERTY_KOTA, 1, "TYO", "Tokyo", 120, {8, 40, 100, 300, 450, 600}, 50, 39, false, {17, 9}, {13, 8}},
-    {PROPERTY_KOTA, 2, "GZH", "Guangzhou", 140, {10, 50, 150, 450, 625, 750}, 100, 232, false, {19, 8}, {16, 6}},
-    {PROPERTY_PERUSAHAAN, -1, "PLN", "Perusahaan Listrik", 150, {}, 0, 0, false, {28, 8}, {}},
-    {PROPERTY_KOTA, 2, "BJG", "Beijing", 140, {10, 50, 150, 450, 625, 750}, 100, 232, false, {37, 8}, {34, 6}},
-    {PROPERTY_KOTA, 2, "SHG", "Shanghai", 160, {12, 60, 180, 500, 700, 900}, 100, 232, false, {46, 8}, {43, 6}},
-    {PROPERTY_STASION, -1, "GBG", "Gubeng", 200, {}, 0, 0, false, {55, 8}, {}},
-    {PROPERTY_KOTA, 3, "MSL", "Marseille", 180, {14, 70, 200, 550, 750, 950}, 100, 71, false, {64, 8}, {61, 6}},
-    {PROPERTY_KOTA, 3, "BDX", "Bordeaux", 180, {14, 70, 200, 550, 750, 950}, 100, 71, false, {82, 8}, {79, 6}},
-    {PROPERTY_KOTA, 3, "PAR", "Paris", 200, {16, 80, 220, 600, 800, 1000}, 100, 71, false, {91, 8}, {88, 6}},
-    {PROPERTY_KOTA, 4, "RTD", "Rotterdam", 220, {18, 90, 250, 700, 875, 1050}, 150, 87, false, {94, 9}, {97, 8}},
-    {PROPERTY_KOTA, 4, "DHG", "Den Haag", 220, {18, 90, 250, 700, 875, 1050}, 150, 87, false, {94, 17}, {97, 16}},
-    {PROPERTY_KOTA, 4, "AMS", "Amsterdam", 240, {20, 100, 300, 750, 925, 1100}, 150, 87, false, {94, 21}, {97, 20}},
-    {PROPERTY_STASION, -1, "STH", "ST. Hall", 200, {}, 0, 0, false, {94, 25}, {}},
-    {PROPERTY_KOTA, 5, "TPN", "Tampines", 260, {22, 110, 330, 800, 975, 1150}, 150, 135, false, {94, 29}, {97, 28}},
-    {PROPERTY_KOTA, 5, "JRG", "Jurong", 260, {22, 110, 330, 800, 975, 1150}, 150, 135, false, {94, 34}, {97, 32}},
-    {PROPERTY_PERUSAHAAN, -1, "WTR", "PDAM", 150, {}, 0, 0, false, {94, 37}, {}},
-    {PROPERTY_KOTA, 5, "SGP", "Singapore", 280, {24, 120, 360, 850, 1025, 1200}, 150, 135, false, {94, 41}, {97, 40}},
-    {PROPERTY_KOTA, 6, "CCG", "Chicago", 300, {26, 130, 390, 900, 1100, 1275}, 200, 55, false, {91, 42}, {88, 44}},
-    {PROPERTY_KOTA, 6, "LAG", "Los Angeles", 300, {26, 130, 390, 900, 1100, 1275}, 200, 55, false, {82, 42}, {79, 44}},
-    {PROPERTY_KOTA, 6, "NYC", "New York", 320, {28, 150, 450, 1000, 1200, 1400}, 200, 55, false, {65, 42}, {61, 44}},
-    {PROPERTY_STASION, -1, "GBR", "Gambir", 200, {}, 0, 0, false, {55, 42}, {}},
-    {PROPERTY_KOTA, 7, "BDG", "Bandung", 350, {35, 175, 500, 1100, 1300, 1500}, 200, 103, false, {37, 42}, {34, 44}},
-    {PROPERTY_KOTA, 7, "JKT", "Jakarta", 400, {40, 185, 550, 1200, 1500, 1700}, 200, 103, true, {19, 42}, {16, 44}}};
+    {PROPERTY_KOTA, 0, "MLB", "Melbourne", 60, {2, 10, 30, 90, 160, 250}, 50, 31, true, {17, 41}, {13, 40}, {13, 41}},
+    {PROPERTY_KOTA, 0, "SYD", "Sydney", 60, {4, 20, 60, 180, 320, 450}, 50, 31, false, {17, 33}, {13, 32}, {13, 33}},
+    {PROPERTY_STASION, -1, "PSN", "Pasar Senen", 200, {25, 50, 100, 200}, 0, 249, false, {17, 25}, {}, {}},
+    {PROPERTY_KOTA, 1, "OSA", "Osaka", 100, {6, 30, 90, 270, 400, 550}, 50, 47, false, {17, 21}, {13, 20}, {13, 21}},
+    {PROPERTY_KOTA, 1, "KYO", "Kyoto", 100, {6, 30, 90, 270, 400, 550}, 50, 47, false, {17, 13}, {13, 12}, {13, 13}},
+    {PROPERTY_KOTA, 1, "TYO", "Tokyo", 120, {8, 40, 100, 300, 450, 600}, 50, 47, false, {17, 9}, {13, 8}, {13, 9}},
+    {PROPERTY_KOTA, 2, "GZH", "Guangzhou", 140, {10, 50, 150, 450, 625, 750}, 100, 224, false, {19, 8}, {16, 6}, {19, 6}},
+    {PROPERTY_PERUSAHAAN, -1, "PLN", "Perusahaan Listrik Negara", 150, {}, 0, 249, false, {28, 8}, {}, {}},
+    {PROPERTY_KOTA, 2, "BJG", "Beijing", 140, {10, 50, 150, 450, 625, 750}, 100, 224, false, {37, 8}, {34, 6}, {37, 6}},
+    {PROPERTY_KOTA, 2, "SHG", "Shanghai", 160, {12, 60, 180, 500, 700, 900}, 100, 224, false, {46, 8}, {43, 6}, {46, 6}},
+    {PROPERTY_STASION, -1, "GBG", "Gubeng", 200, {25, 50, 100, 200}, 0, 249, false, {55, 8}, {}, {}},
+    {PROPERTY_KOTA, 3, "MSL", "Marseille", 180, {14, 70, 200, 550, 750, 950}, 100, 79, false, {64, 8}, {61, 6}, {64, 6}},
+    {PROPERTY_KOTA, 3, "BDX", "Bordeaux", 180, {14, 70, 200, 550, 750, 950}, 100, 79, false, {82, 8}, {79, 6}, {82, 6}},
+    {PROPERTY_KOTA, 3, "PAR", "Paris", 200, {16, 80, 220, 600, 800, 1000}, 100, 79, false, {91, 8}, {88, 6}, {91, 6}},
+    {PROPERTY_KOTA, 4, "RTD", "Rotterdam", 220, {18, 90, 250, 700, 875, 1050}, 150, 95, false, {94, 9}, {97, 8}, {97, 9}},
+    {PROPERTY_KOTA, 4, "DHG", "Den Haag", 220, {18, 90, 250, 700, 875, 1050}, 150, 95, false, {94, 17}, {97, 16}, {97, 17}},
+    {PROPERTY_KOTA, 4, "AMS", "Amsterdam", 240, {20, 100, 300, 750, 925, 1100}, 150, 95, false, {94, 21}, {97, 20}, {97, 21}},
+    {PROPERTY_STASION, -1, "STH", "ST. Hall", 200, {25, 50, 100, 200}, 0, 249, false, {94, 25}, {}, {}},
+    {PROPERTY_KOTA, 5, "TPN", "Tampines", 260, {22, 110, 330, 800, 975, 1150}, 150, 143, false, {94, 29}, {97, 28}, {97, 29}},
+    {PROPERTY_KOTA, 5, "JRG", "Jurong", 260, {22, 110, 330, 800, 975, 1150}, 150, 143, false, {94, 34}, {97, 32}, {97, 33}},
+    {PROPERTY_PERUSAHAAN, -1, "WTR", "Perusahaan Daerah Air Minum", 150, {}, 0, 249, false, {94, 37}, {}, {}},
+    {PROPERTY_KOTA, 5, "SGP", "Singapore", 280, {24, 120, 360, 850, 1025, 1200}, 150, 143, false, {94, 41}, {97, 40}, {97, 41}},
+    {PROPERTY_KOTA, 6, "CCG", "Chicago", 300, {26, 130, 390, 900, 1100, 1275}, 200, 63, false, {91, 42}, {88, 44}, {91, 44}},
+    {PROPERTY_KOTA, 6, "LAG", "Los Angeles", 300, {26, 130, 390, 900, 1100, 1275}, 200, 63, false, {82, 42}, {79, 44}, {82, 44}},
+    {PROPERTY_KOTA, 6, "NYC", "New York", 320, {28, 150, 450, 1000, 1200, 1400}, 200, 63, false, {65, 42}, {61, 44}, {64, 44}},
+    {PROPERTY_STASION, -1, "GBR", "Gambir", 200, {25, 50, 100, 200}, 0, 249, false, {55, 42}, {}},
+    {PROPERTY_KOTA, 7, "BDG", "Bandung", 350, {35, 175, 500, 1100, 1300, 1500}, 200, 111, false, {37, 42}, {34, 44}, {37, 44}},
+    {PROPERTY_KOTA, 7, "JKT", "Jakarta", 400, {40, 185, 550, 1200, 1500, 1700}, 200, 111, true, {19, 42}, {16, 44}, {19, 44}}};
 
 Step listStep[40] = {
     {0, {6, 44}, "GO", NULL},
@@ -167,7 +199,7 @@ Step listStep[40] = {
     {17, {72, 4}, "DANA_UMUM", NULL},
     {18, {81, 3}, "", &kartuProp[12]},
     {19, {90, 3}, "", &kartuProp[13]},
-    {20, {102, 4}, "PARKIR_GRATIS", NULL},
+    {20, {102, 3}, "PARKIR_GRATIS", NULL},
     {21, {103, 9}, "", &kartuProp[14]},
     {22, {102, 13}, "KESEMPATAN", NULL},
     {23, {103, 17}, "", &kartuProp[15]},
@@ -193,11 +225,14 @@ HANDLE hConsole;
 int main()
 {
   // inisialisasi
+  SetConsoleTitle("MiniPoly");
   hConsole = GetStdHandle(STD_OUTPUT_HANDLE); // handle console (untuk mengubah warna teks)
   SetConsoleOutputCP(CP_UTF8);                // agar dapat print utf-8
   srand(time(NULL));                          // inisialisasi random
   hideCursor();
   renderLogo();
+  renderKeyboardInstruction();
+
   char startNotSelectedMenuString[][30] = {"     START  ",
                                            "  HOW TO PLAY  ",
                                            "     QUIT  "};
@@ -208,11 +243,16 @@ int main()
   if (selection == 0) // start
   {
     Player players[4];
+    int propertyOwnership[40];
+    for (int i = 0; i < 40; i++)
+    {
+      propertyOwnership[i] = -1;
+    }
     int playerCount = 0;
     initGame(players, &playerCount);
 
     // main game
-    startGame(players, &playerCount);
+    startGame(players, &playerCount, propertyOwnership);
   }
   else if (selection == 1) // how to play
   {
@@ -236,21 +276,14 @@ void gotoxy(int x, int y)
   coord.Y = y;
   SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
-
 void delay(int ms)
 {
-  clock_t start = clock();
-  while (clock() < start + ms)
-  {
-    ;
-  }
+  Sleep(ms);
 }
-
 void setColor(int color)
 {
   SetConsoleTextAttribute(hConsole, color);
 }
-
 void hideCursor()
 {
   CONSOLE_CURSOR_INFO info;
@@ -258,7 +291,6 @@ void hideCursor()
   info.bVisible = FALSE;
   SetConsoleCursorInfo(hConsole, &info);
 }
-
 void showCursor()
 {
   CONSOLE_CURSOR_INFO info;
@@ -266,7 +298,18 @@ void showCursor()
   info.bVisible = TRUE;
   SetConsoleCursorInfo(hConsole, &info);
 }
-
+int getScreenBottomIndex()
+{
+  CONSOLE_SCREEN_BUFFER_INFO csbi;
+  GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+  return csbi.srWindow.Bottom - csbi.srWindow.Top;
+}
+int getScreenRightIndex()
+{
+  CONSOLE_SCREEN_BUFFER_INFO csbi;
+  GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+  return csbi.srWindow.Right - csbi.srWindow.Left;
+}
 void printWithColor(int color, char text[], ...)
 {
   va_list args;
@@ -276,7 +319,6 @@ void printWithColor(int color, char text[], ...)
   va_end(args);
   setColor(7);
 }
-
 int rotateIndex(int currentIndex, int maxIndex, bool isPlus)
 {
   if (isPlus)
@@ -297,17 +339,21 @@ int rotateIndex(int currentIndex, int maxIndex, bool isPlus)
   }
   return currentIndex;
 }
-
 void printTengah(char *teks, int x, int y, int lebar, int color)
 {
-  int panjang = strlen(teks);
-  int xAwal = x - (panjang / 2);
-  int xAkhir = xAwal + panjang;
-  int yAwal = y - (lebar / 2);
-  int yAkhir = yAwal + lebar;
-  gotoxy(xAwal, yAwal);
+  gotoxy(x, y);
+  int panjangTeks = strlen(teks);
+  int spasiKiri = (lebar - panjangTeks) / 2;
+  int spasiKanan = lebar - panjangTeks - spasiKiri;
+  for (int i = 0; i < spasiKiri; i++)
+  {
+    printWithColor(color, " ");
+  }
   printWithColor(color, "%s", teks);
-  setColor(7);
+  for (int i = 0; i < spasiKanan; i++)
+  {
+    printWithColor(color, " ");
+  }
 }
 
 void renderLogo()
@@ -351,7 +397,7 @@ int selectionMenu(char notSelectedStrings[][30], char selectedStrings[][30], int
   renderSelectionMenu(notSelectedStrings, selectedStrings, selected, maxIndex, x, y);
   while (1)
   {
-    int keyboardResult = keyboardInputHandler();
+    int keyboardResult = keyboardArrowEnterHandler();
     if (keyboardResult == ARROW_UP)
     {
       selected = rotateIndex(selected, maxIndex, false);
@@ -373,7 +419,14 @@ int renderSelectionMenu(char notSelectedStrings[][30], char selectedStrings[][30
   for (int i = 0; i <= maxIndex; i++)
   {
     gotoxy(x, y + i);
-    i == selected ? printWithColor(14, "%s", selectedStrings[i]) : printf("%s", notSelectedStrings[i]);
+    if (i == selected)
+    {
+      printWithColor(14, "%s", selectedStrings[i]);
+    }
+    else
+    {
+      printf("%s", notSelectedStrings[i]);
+    }
   }
 }
 
@@ -436,7 +489,7 @@ void printBoard()
   {
     if (listStep[i].kartuProperty != NULL && listStep[i].kartuProperty->jenisProperty == PROPERTY_KOTA)
     {
-      ScreenCoordinate tempScreenCoordinate = listStep[i].kartuProperty->lokasiRumah;
+      ScreenCoordinate tempScreenCoordinate = listStep[i].kartuProperty->tandaWarna;
       if (i < 10 || (i > 20 && i < 30))
       {
         for (int j = 0; j < 3; j++)
@@ -454,7 +507,7 @@ void printBoard()
   }
 }
 
-int keyboardInputHandler()
+int keyboardArrowEnterHandler()
 {
   int ch = _getch();
   if (ch == 224)
@@ -503,7 +556,6 @@ Dadu kocokDadu()
   printDadu(hasilDadu, true);
   return hasilDadu;
 }
-
 Dadu randomDadu()
 {
   Dadu tempDadu;
@@ -511,7 +563,6 @@ Dadu randomDadu()
   tempDadu.dadu2 = rand() % 6 + 1;
   return tempDadu;
 }
-
 void printDadu(Dadu d, bool last)
 {
   char dadu[6][5][40] = {{"┌─────────┐",
@@ -572,6 +623,14 @@ void printDadu(Dadu d, bool last)
       printf("%s", dadu[d.dadu2 - 1][i]);
     }
   }
+}
+int getJumlahDadu(Dadu d)
+{
+  return d.dadu1 + d.dadu2;
+}
+bool isDouble(Dadu d)
+{
+  return d.dadu1 == d.dadu2;
 }
 
 void resetGame()
@@ -640,12 +699,13 @@ void initGame(Player *players, int *playerCount)
     gotoxy(12, 11 + *playerCount - selectionBot + i);
     printf("%d. (%s) %s\n", i + 1, players[i].simbol, players[i].nama);
   }
+  printf("\n");
   gotoxy(12, 11 + *playerCount * 2 - selectionBot);
-  printf("Tekan apapun untuk melanjutkan...");
-  getchar();
+  printf("Tekan ENTER untuk melanjutkan...");
+  waitForEnter();
 }
 
-void startGame(Player *players, int *playerCount)
+void startGame(Player *players, int *playerCount, int propertyOwnership[40])
 {
   system("cls");
   gotoxy(0, 0);
@@ -653,12 +713,43 @@ void startGame(Player *players, int *playerCount)
   initPlayerStats(players, *playerCount);
   for (int i = 0; i < *playerCount; i++)
   {
-    renderPosisiPlayer(&players[i], 0, 0);
+    renderPosisiPlayer(&players[i], 0);
   }
   int pemainTersisa = *playerCount;
-  // delay(1000);
-  // changePlayerMoney(&players[1], -500);
-  // changePlayerMoney(&players[2], 500);
+  int giliran = 0;
+  int doubleCount = 0;
+  while (pemainTersisa > 1)
+  {
+    clearKartu();
+
+    // TODO cek player lagi di penjara ato engga
+    Dadu hasilDadu = kocokDadu();
+    doubleCount = isDouble(hasilDadu) ? doubleCount + 1 : 0;
+    // cek player triple double
+    if (doubleCount == 3)
+    {
+      doubleCount = 0;
+      // TODO player masuk penjara
+    }
+    else
+    {
+      majuNLangkah(&players[giliran], getJumlahDadu(hasilDadu));
+      if (strcmp(listStep[players[giliran].posisi].special, "") == 0)
+      {
+        propertyHandler(players, giliran, players[giliran].posisi, propertyOwnership);
+      }
+      else
+      {
+        specialHandler(players, giliran, listStep[players[giliran].posisi].special);
+      }
+    }
+
+    if (doubleCount == 0)
+    {
+      giliran = rotateIndex(giliran, *playerCount - 1, true);
+    }
+    delay(3000);
+  }
   getchar();
 }
 
@@ -695,11 +786,17 @@ void initPlayerStats(Player players[], int playerCount)
 
 int changePlayerMoney(Player *player, int jumlah)
 {
+  int uangSebelum = player->uang;
+  int uangSetelah = uangSebelum + jumlah;
   if (jumlah < 0)
   {
-    for (int i = 0; i < abs(jumlah); i++)
+    while (player->uang > uangSetelah)
     {
-      if (player->uang > 0)
+      if (player->uang - 4 >= uangSetelah)
+      {
+        player->uang -= 4;
+      }
+      else
       {
         player->uang--;
       }
@@ -709,9 +806,16 @@ int changePlayerMoney(Player *player, int jumlah)
   }
   else
   {
-    for (int i = 0; i < abs(jumlah); i++)
+    while (player->uang < uangSetelah)
     {
-      player->uang++;
+      if (player->uang + 4 <= uangSetelah)
+      {
+        player->uang += 4;
+      }
+      else
+      {
+        player->uang++;
+      }
       renderPlayerMoney(*player, 2);
       delay(1);
     }
@@ -730,10 +834,14 @@ void majuNLangkah(Player *p, int N)
 {
   for (int i = 0; i < N; i++)
   {
+    delay(200);
     int posisiSebelum = p->posisi;
-    int posisiSesesudah = rotateIndex(p->posisi, 39, true);
-    // TODO cek posisi 0, kalo ya kasih uang 200
-    renderPosisiPlayer(p, posisiSebelum, posisiSesesudah);
+    p->posisi = rotateIndex(p->posisi, 39, true);
+    renderPosisiPlayer(p, posisiSebelum);
+    if (p->posisi == 0)
+    {
+      changePlayerMoney(p, 200);
+    }
   }
 }
 void lompatKe(Player *p, int index)
@@ -741,12 +849,262 @@ void lompatKe(Player *p, int index)
   p->posisi = index;
 }
 
-void renderPosisiPlayer(Player *p, int sebelum, int posisi)
+void renderPosisiPlayer(Player *p, int sebelum)
 {
   gotoxy(listStep[sebelum].lokasiPlayer.x + p->urutanBermain, listStep[sebelum].lokasiPlayer.y);
   printf(" ");
-  gotoxy(listStep[posisi].lokasiPlayer.x + p->urutanBermain, listStep[posisi].lokasiPlayer.y);
-  printf("%s", p->simbol);
+  gotoxy(listStep[p->posisi].lokasiPlayer.x + p->urutanBermain, listStep[p->posisi].lokasiPlayer.y);
+  printWithColor(240, "%s", p->simbol);
+}
+
+void propertyHandler(Player *players, int giliran, int step, int *propertyOwnership)
+{
+  KartuProperty *kartuProperty = listStep[step].kartuProperty;
+  renderKartuProperty(kartuProperty);
+  // artinya property belum dimiliki oleh siapapun
+  if (propertyOwnership[step] == -1)
+  {
+
+    // TODO pemain bisa membeli property
+  }
+  // artinya property udah dimiliki
+  else
+  {
+    // TODO pemain lain udah ada yang beli, pemain ini harus dibayar oleh yang nginep dan bisa ambil alih
+  }
+}
+void specialHandler(Player *players, int giliran, char special[30])
+{
+  if (strcmp(special, "DANA_UMUM") == 0)
+  {
+    kartuDanaUmumHandler(&players[giliran]);
+  }
+  else if (strcmp(special, "KESEMPATAN") == 0)
+  {
+    kartuKesempatanHandler(&players[giliran]);
+  }
+  else if (strcmp(special, "INCOME_TAX") == 0)
+  {
+  }
+  else if (strcmp(special, "LUXURY_TAX") == 0)
+  {
+  }
+  else if (strcmp(special, "PARKIR_GRATIS") == 0)
+  {
+  }
+  else if (strcmp(special, "PERGI_KE_PENJARA") == 0)
+  {
+  }
+}
+void kartuKesempatanHandler(Player *p)
+{
+  char kesempatan[][200] = {"Pergi ke Guangzhou. Jika melewati\n\"GO\" ambil $200",
+                            "Kartu bebas penjara. Kartu ini\ndapat disimpan hingga dibutuhkan",
+                            "Pergi ke Stasiun Pasar Senen.\nJika melewatu \"GO\" ambil $200",
+                            "Pergi ke stasiun terdekat.\nJika sudah dimiliki pemain lain,\nbayar 2 kali lipat\nharga sewanya",
+                            "Pergi ke Amsterdam. Jika melewati\n\"GO\" ambil $200",
+                            "Ada biaya perbaikan rumah, bayar\n$25 untuk setiap rumah dan\n$100 untuk setiap hotel",
+                            "Pergi ke \"GO\". Ambil $200",
+                            "Bank memberikan Anda gratifikasi $50",
+                            "Bayar pajak untuk orang miskin $15",
+                            "Pergi ke perusahaan terdekat.\nJika sudah dimiliki pemain lain,\nbayar pemilik sebanyak 10x jumlah\nlemparan dadu",
+                            "Anda masuk penjara, tidak melewati\n\"GO\", tidak mendapatkan $200",
+                            "Anda terpilih sebagai ketua dari\npapan ini. Bayar setiap pemain $50",
+                            "Jalan-jalan ke Jakarta.\nPergi ke Jakarta",
+                            "Mundur 3 langkah",
+                            "Bangunan dan pinjaman anda sudah\njatuh tempo. Ambil $150 dari Bank",
+                            "Saatnya jalan-jalan.\nPergi ke Parkir Bebas"};
+  // random dari 0 ke 15
+  int random = rand() % 15;
+  // render kartu
+  renderKartuKesempatan(kesempatan[random]);
+  // TODO buat handlernya
+}
+void kartuDanaUmumHandler(Player *p)
+{
+
+  char danaUmum[][200] = {"Bayar pajak sekolah $150",
+                          "Grand Opening Opera.\nSetiap pemain membayar Anda $50",
+                          "Anda mewarisi $100",
+                          "Bayar biaya rumah sakit $100",
+                          "Pengembalian dana pajak pendapatan.\nAmbil $20",
+                          "Anda masuk penjara, tidak melewati\n\"GO\", tidak mendapatkan $200",
+                          "Kartu bebas penjara. Kartu ini\ndapat disimpan hingga dibutuhkan",
+                          "Bayar biaya perbaikan jalan.\nBayar $40 per rumah dan\n$115 per hotel",
+                          "Bank error, Anda mendapatkan $200",
+                          "Pergi ke \"GO\". Ambil $200",
+                          "Anda mendapat hadiah natal $100",
+                          "Biaya dokter, bayar $50",
+                          "Dari penjualan saham,\nAnda mendapatkan $45",
+                          "Dapatkan $25 karena Anda telah\nmenjadi pelayan",
+                          "Jatuh tempo dana asuransi jiwa.\nAnda mendapat $100"};
+  // random dari 0 ke 15
+  int random = rand() % 15;
+  // render kartu
+  renderKartuDanaUmum(danaUmum[random]);
+  // TODO buat handlernya
+}
+
+void renderKartuKesempatan(char *text)
+{
+  char template[][121] = {"┌──────────────────────────────────────┐",
+                          "│              KESEMPATAN              │",
+                          "├──────────────────────────────────────┤",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "└──────────────────────────────────────┘"};
+  for (int i = 0; i < 13; i++)
+  {
+    gotoxy(116, 14 + i);
+    printf("%s", template[i]);
+  }
+
+  char *token = strtok(text, "\n");
+  int currentLine = 0;
+  while (token != NULL)
+  {
+    printTengah(token, 118, 20 + currentLine, 36, 7);
+    token = strtok(NULL, "\n");
+    currentLine++;
+  }
+}
+void renderKartuDanaUmum(char *text)
+{
+  char template[][121] = {"┌──────────────────────────────────────┐",
+                          "│              DANA UMUM               │",
+                          "├──────────────────────────────────────┤",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "│                                      │",
+                          "└──────────────────────────────────────┘"};
+  for (int i = 0; i < 13; i++)
+  {
+    gotoxy(116, 14 + i);
+    printf("%s", template[i]);
+  }
+
+  char *token = strtok(text, "\n");
+  int currentLine = 0;
+  while (token != NULL)
+  {
+    printTengah(token, 118, 20 + currentLine, 36, 7);
+    token = strtok(NULL, "\n");
+    currentLine++;
+  }
+}
+
+void renderKartuProperty(KartuProperty *kartuProperty)
+{
+  if (strcmp(kartuProperty->jenisProperty, PROPERTY_KOTA) == 0)
+  {
+    char kartuPropertyText[][100] = {"┌─────────────────────────────┐",
+                                     "│                             │",
+                                     "├─────────────────────────────┤",
+                                     "│                             │",
+                                     "│ Jika sudah memiliki:        │",
+                                     "│ 1 Rumah : $                 │",
+                                     "│ 2 Rumah : $                 │",
+                                     "│ 3 Rumah : $                 │",
+                                     "│ 4 Rumah : $                 │",
+                                     "│ 1 Hotel : $                 │",
+                                     "│                             │",
+                                     "│ Harga rumah & hotel : $     │",
+                                     "│                             │",
+                                     "│ Harga jual dari total asset │",
+                                     "│ Secara sepihak : 70%        │",
+                                     "│ Ambil alih     : 150%       │",
+                                     "└─────────────────────────────┘"};
+    for (int i = 0; i < 17; i++)
+    {
+      gotoxy(116, 14 + i);
+      printf("%s", kartuPropertyText[i]);
+    }
+    printTengah(kartuProperty->namaKota, 117, 15, 29, kartuProperty->color);
+    char teksSewa[15];
+    sprintf(teksSewa, "Sewa $%d", kartuProperty->hargaSewa[0]);
+    printTengah(teksSewa, 117, 17, 29, 7);
+    for (int i = 1; i <= 5; i++)
+    {
+      gotoxy(129, 18 + i);
+      printf("%d", kartuProperty->hargaSewa[i]);
+    }
+    gotoxy(141, 25);
+    printf("%d", kartuProperty->hargaUpgrade);
+  }
+  else if (strcmp(kartuProperty->jenisProperty, PROPERTY_STASION) == 0)
+  {
+    char kartuPropertyText[][100] = {"┌─────────────────────────────┐",
+                                     "│                             │",
+                                     "├─────────────────────────────┤",
+                                     "│         Harga Sewa          │",
+                                     "│     Jika sudah memiliki     │",
+                                     "│ 1 Stasion : $               │",
+                                     "│ 2 Stasion : $               │",
+                                     "│ 3 Stasion : $               │",
+                                     "│ 4 Stasion : $               │",
+                                     "│                             │",
+                                     "│                             │",
+                                     "│    Harga jual 1 stasion     │",
+                                     "│ Secara sepihak : 70%        │",
+                                     "│ Ambil alih     : 150%       │",
+                                     "│                             │",
+                                     "│                             │",
+                                     "└─────────────────────────────┘"};
+    for (int i = 0; i < 17; i++)
+    {
+      gotoxy(116, 14 + i);
+      printf("%s", kartuPropertyText[i]);
+    }
+    printTengah(kartuProperty->namaKota, 117, 15, 29, kartuProperty->color);
+    for (int i = 0; i < 4; i++)
+    {
+      gotoxy(131, 19 + i);
+      printf("%d", kartuProperty->hargaSewa[i]);
+    }
+  }
+  else if (strcmp(kartuProperty->jenisProperty, PROPERTY_PERUSAHAAN) == 0)
+  {
+    char kartuPropertyText[][100] = {"┌─────────────────────────────┐",
+                                     "│                             │",
+                                     "├─────────────────────────────┤",
+                                     "│         Harga Sewa          │",
+                                     "│                             │",
+                                     "│ jika 1 perusahaan dimiliki: │",
+                                     "│ harga sewa sejumlah 4x      │",
+                                     "│ lempar dadu                 │",
+                                     "│                             │",
+                                     "│ jika 2 perusahaan dimiliki: │",
+                                     "│ harga sewa sejumlah 10x     │",
+                                     "│ lempar dadu                 │",
+                                     "│                             │",
+                                     "│   Harga jual 1 perusahaan   │",
+                                     "│ Secara sepihak : 70%        │",
+                                     "│ Ambil alih     : 150%       │",
+                                     "└─────────────────────────────┘"};
+    for (int i = 0; i < 17; i++)
+    {
+      gotoxy(116, 14 + i);
+      printf("%s", kartuPropertyText[i]);
+    }
+    printTengah(kartuProperty->namaKota, 117, 15, 29, kartuProperty->color);
+  }
+}
+void clearKartu()
+{
+  clearArea(116, 14, 156, 30);
 }
 
 void removeProperty(playerProperty properties[], int jumlahProperty, int index)
@@ -783,5 +1141,34 @@ void shuffleSymbol(Player *players, int playerCount)
   for (int i = 0; i < playerCount; i++)
   {
     strcpy(players[i].simbol, simbol[randomIndex[i]]);
+  }
+}
+
+void renderKeyboardInstruction()
+{
+  char instructionText[] = "↑ ↓: UP / DOWN      ENTER: SELECT      ESC: BACK";
+  gotoxy(0, getScreenBottomIndex());
+  for (int i = 0; i <= getScreenRightIndex(); i++)
+  {
+    if (i < 53)
+    {
+      printWithColor(112, "%c", instructionText[i]);
+    }
+    else
+    {
+      printWithColor(112, " ");
+    }
+  }
+}
+
+void waitForEnter()
+{
+  while (1)
+  {
+    int ch = _getch();
+    if (ch == KEY_ENTER)
+    {
+      break;
+    }
   }
 }
