@@ -74,25 +74,25 @@ typedef struct Player
 
 typedef struct PlayerProperty
 {
-  Player *pemilik;
-  int level; // 0 tanpa rumah, 1 rumah, 2 rumah, 3 rumah, 4 rumah, 5 hotel
+  Player *pemilik; // pointer ke pemilik property
+  int level;       // 0 tanpa rumah, 1 rumah, 2 rumah, 3 rumah, 4 rumah, 5 hotel
 } PlayerProperty;
 
-// list semua module yang terdapat pada program
+// list module
 
 // list modul tidak terkait dengan game
-void gotoxy(int x, int y);
-void delay(int ms);
-void setColor(int color);
-void hideCursor();
-void showCursor();
-int getScreenBottomIndex();
-int getScreenRightIndex();
-void clearArea(int xStart, int yStart, int xEnd, int yEnd);
+void gotoxy(int x, int y);                                        // pergi ke koordinat x,y
+void delay(int ms);                                               // melakukan delay
+void setColor(int color);                                         // menyetel warna untuk print
+void hideCursor();                                                // menyembunyikan cursor yang berkedip-kedip
+void showCursor();                                                // menampilkan cursor yang berkedip-kedip
+int getScreenBottomIndex();                                       // mendapatkan index bawah layar
+int getScreenRightIndex();                                        // mendapatkan index kanan layar
+void clearArea(int xStart, int yStart, int xEnd, int yEnd);       // berfungsi untuk menghapus area di layar
 int rotateIndex(int currentIndex, int maxIndex, bool isPlus);     // berfungsi untuk merotasi index jika sudah terakhir atau ke paling atas
 void printTengah(char *teks, int x, int y, int lebar, int color); // untuk memprint teks di tengah
 int keyboardArrowEnterHandler();                                  // menghandle keyboard arrow dan enter
-void waitForEnter();
+void waitForEnter();                                              // menunggu keyboard enter
 
 // list modul terkait dengan game
 void playGame();
@@ -110,6 +110,7 @@ int playerSelectionMenu(char selections[][50], int maxIndex); // untuk player me
 void printGiliranText(Player p);
 void clearGiliranText();
 void clearPlayerSelectionText();
+
 // dadu
 Dadu kocokDadu();
 Dadu randomDadu();
@@ -142,15 +143,19 @@ void jualProperty(Player *p, PlayerProperty *playerProperty, int posisi);
 void ambilAlihProperty(Player *p, PlayerProperty *playerProperty, int posisi);
 void renderProperty(PlayerProperty playerProperty, int posisi);
 
+bool punyaRumahSemuaKompleks(Player p, int posisi);
+int jumlahStasionDimiliki(Player p);
+int jumlahPerusahaanDimiliki(Player p);
+
 // kartu kesempatan dan dana umum
 bool kartuKesempatanHandler(Player players[], int giliran, int playerCount, PlayerProperty playerProperties[40]);
 bool kartuDanaUmumHandler(Player players[], int giliran, int playerCount, PlayerProperty playerProperties[40]);
 
-// render
+// render kartu kesempatan dan dana umum
 void renderKartuKesempatan(char *text);
 void renderKartuDanaUmum(char *text);
 
-// kartu property
+// render kartu property
 void renderKartuProperty(KartuProperty *kartuProperty);
 
 // clear untuk kartu property dan kartu dana umum/kesempatan
@@ -161,8 +166,6 @@ void propertyHandler(Player *players, int giliran, int posisi, PlayerProperty pl
 bool specialHandler(Player *players, int giliran, char special[30], int playerCount, PlayerProperty playerProperties[40]);
 bool penjaraHandler(Player *p);
 
-void renderRumahHotel(KartuProperty *kartuProperty, int level);
-
 void renderKeyboardInstruction();
 void shufflePlayer(Player *players, int playerCount);
 void shuffleSymbol(Player *players, int playerCount);
@@ -170,30 +173,30 @@ void shuffleSymbol(Player *players, int playerCount);
 KartuProperty kartuProp[28] = {
     {PROPERTY_KOTA, 0, "MLB", "Melbourne", 60, {2, 10, 30, 90, 160, 250}, 50, 31, true, {17, 41}, {13, 40}, {13, 41}},
     {PROPERTY_KOTA, 0, "SYD", "Sydney", 60, {4, 20, 60, 180, 320, 450}, 50, 31, false, {17, 33}, {13, 32}, {13, 33}},
-    {PROPERTY_STASION, -1, "PSN", "Pasar Senen", 200, {25, 50, 100, 200}, 0, 249, false, {17, 25}, {}, {}},
+    {PROPERTY_STASION, 8, "PSN", "Pasar Senen", 200, {25, 50, 100, 200}, 0, 249, false, {17, 25}, {}, {}},
     {PROPERTY_KOTA, 1, "OSA", "Osaka", 100, {6, 30, 90, 270, 400, 550}, 50, 47, false, {17, 21}, {13, 20}, {13, 21}},
     {PROPERTY_KOTA, 1, "KYO", "Kyoto", 100, {6, 30, 90, 270, 400, 550}, 50, 47, false, {17, 13}, {13, 12}, {13, 13}},
     {PROPERTY_KOTA, 1, "TYO", "Tokyo", 120, {8, 40, 100, 300, 450, 600}, 50, 47, false, {17, 9}, {13, 8}, {13, 9}},
     {PROPERTY_KOTA, 2, "GZH", "Guangzhou", 140, {10, 50, 150, 450, 625, 750}, 100, 224, false, {19, 8}, {16, 6}, {19, 6}},
-    {PROPERTY_PERUSAHAAN, -1, "PLN", "Perusahaan Listrik Negara", 150, {}, 0, 249, false, {28, 8}, {}, {}},
+    {PROPERTY_PERUSAHAAN, 9, "PLN", "Perusahaan Listrik Negara", 150, {}, 0, 249, false, {28, 8}, {}, {}},
     {PROPERTY_KOTA, 2, "BJG", "Beijing", 140, {10, 50, 150, 450, 625, 750}, 100, 224, false, {37, 8}, {34, 6}, {37, 6}},
     {PROPERTY_KOTA, 2, "SHG", "Shanghai", 160, {12, 60, 180, 500, 700, 900}, 100, 224, false, {46, 8}, {43, 6}, {46, 6}},
-    {PROPERTY_STASION, -1, "GBG", "Gubeng", 200, {25, 50, 100, 200}, 0, 249, false, {55, 8}, {}, {}},
+    {PROPERTY_STASION, 8, "GBG", "Gubeng", 200, {25, 50, 100, 200}, 0, 249, false, {55, 8}, {}, {}},
     {PROPERTY_KOTA, 3, "MSL", "Marseille", 180, {14, 70, 200, 550, 750, 950}, 100, 79, false, {64, 8}, {61, 6}, {64, 6}},
     {PROPERTY_KOTA, 3, "BDX", "Bordeaux", 180, {14, 70, 200, 550, 750, 950}, 100, 79, false, {82, 8}, {79, 6}, {82, 6}},
     {PROPERTY_KOTA, 3, "PAR", "Paris", 200, {16, 80, 220, 600, 800, 1000}, 100, 79, false, {91, 8}, {88, 6}, {91, 6}},
     {PROPERTY_KOTA, 4, "RTD", "Rotterdam", 220, {18, 90, 250, 700, 875, 1050}, 150, 95, false, {94, 9}, {97, 8}, {97, 9}},
     {PROPERTY_KOTA, 4, "DHG", "Den Haag", 220, {18, 90, 250, 700, 875, 1050}, 150, 95, false, {94, 17}, {97, 16}, {97, 17}},
     {PROPERTY_KOTA, 4, "AMS", "Amsterdam", 240, {20, 100, 300, 750, 925, 1100}, 150, 95, false, {94, 21}, {97, 20}, {97, 21}},
-    {PROPERTY_STASION, -1, "STH", "ST. Hall", 200, {25, 50, 100, 200}, 0, 249, false, {94, 25}, {}, {}},
+    {PROPERTY_STASION, 8, "STH", "ST. Hall", 200, {25, 50, 100, 200}, 0, 249, false, {94, 25}, {}, {}},
     {PROPERTY_KOTA, 5, "TPN", "Tampines", 260, {22, 110, 330, 800, 975, 1150}, 150, 143, false, {94, 29}, {97, 28}, {97, 29}},
     {PROPERTY_KOTA, 5, "JRG", "Jurong", 260, {22, 110, 330, 800, 975, 1150}, 150, 143, false, {94, 34}, {97, 32}, {97, 33}},
-    {PROPERTY_PERUSAHAAN, -1, "WTR", "Perusahaan Daerah Air Minum", 150, {}, 0, 249, false, {94, 37}, {}, {}},
+    {PROPERTY_PERUSAHAAN, 9, "WTR", "Perusahaan Daerah Air Minum", 150, {}, 0, 249, false, {94, 37}, {}, {}},
     {PROPERTY_KOTA, 5, "SGP", "Singapore", 280, {24, 120, 360, 850, 1025, 1200}, 150, 143, false, {94, 41}, {97, 40}, {97, 41}},
     {PROPERTY_KOTA, 6, "CCG", "Chicago", 300, {26, 130, 390, 900, 1100, 1275}, 200, 63, false, {91, 42}, {88, 44}, {91, 44}},
     {PROPERTY_KOTA, 6, "LAG", "Los Angeles", 300, {26, 130, 390, 900, 1100, 1275}, 200, 63, false, {82, 42}, {79, 44}, {82, 44}},
     {PROPERTY_KOTA, 6, "NYC", "New York", 320, {28, 150, 450, 1000, 1200, 1400}, 200, 63, false, {65, 42}, {61, 44}, {64, 44}},
-    {PROPERTY_STASION, -1, "GBR", "Gambir", 200, {25, 50, 100, 200}, 0, 249, false, {55, 42}, {}},
+    {PROPERTY_STASION, 8, "GBR", "Gambir", 200, {25, 50, 100, 200}, 0, 249, false, {55, 42}, {}},
     {PROPERTY_KOTA, 7, "BDG", "Bandung", 350, {35, 175, 500, 1100, 1300, 1500}, 200, 111, false, {37, 42}, {34, 44}, {37, 44}},
     {PROPERTY_KOTA, 7, "JKT", "Jakarta", 400, {40, 185, 550, 1200, 1500, 1700}, 200, 111, true, {19, 42}, {16, 44}, {19, 44}}};
 
@@ -239,7 +242,7 @@ Petak listPetak[40] = {
     {38, {27, 47}, "LUXURY_TAX", NULL},
     {39, {18, 47}, "", &kartuProp[27]}};
 
-int grupkompleks[][3] = {
+int grupkompleks[][4] = {
     {1, 3},
     {6, 8, 9},
     {11, 13, 14},
@@ -247,7 +250,9 @@ int grupkompleks[][3] = {
     {21, 23, 24},
     {26, 27, 29},
     {31, 32, 34},
-    {37, 39}};
+    {37, 39},
+    {5, 15, 25, 35},
+    {12, 28}};
 
 HANDLE hConsole;
 
@@ -1089,7 +1094,6 @@ void propertyHandler(Player *players, int giliran, int posisi, PlayerProperty pl
     switch (selection)
     {
     case 0:
-      // TODO error disini
       break;
     case 1:
       beliProperty(&players[giliran], &playerProperties[posisi], posisi);
@@ -1103,23 +1107,50 @@ void propertyHandler(Player *players, int giliran, int posisi, PlayerProperty pl
     char selectionText[][50] = {
         "Bayar sewa",
         "Bayar sewa dan ambil alih"};
-    int hargaSewa = kartuProperty->hargaSewa[playerProperties[posisi].level];
-    int hargaAmbilAlih = MULTIPLIER_AMBIL_ALIH * (kartuProperty->hargaBeli + playerProperties[posisi].level * kartuProperty->hargaUpgrade);
-    sprintf(selectionText[0], "Bayar Sewa ($%d)", hargaSewa);
-    sprintf(selectionText[1], "Bayar Sewa dan ambil alih ($%d)", hargaSewa + hargaAmbilAlih);
+    int hargaSewa, hargaAmbilAlih;
+    // bayar sewa 2x lipat jika pemain memiliki semua property pada kompleks yang sama
+    // harga ambil alih 2x lipat jika pemain memiliki semua property pada kompleks yang sama
+    // harga biaya sewa tergantung jenis property
+    if (listPetak[posisi].kartuProperty->jenisProperty == PROPERTY_KOTA)
+    {
+      hargaSewa = kartuProperty->hargaSewa[playerProperties[posisi].level];
+      hargaAmbilAlih = MULTIPLIER_AMBIL_ALIH * (kartuProperty->hargaBeli + playerProperties[posisi].level * kartuProperty->hargaUpgrade);
+      if (punyaRumahSemuaKompleks(players[giliran], posisi))
+      {
+        hargaSewa *= 2;
+      }
+      sprintf(selectionText[0], "Bayar Sewa ($%d)", hargaSewa);
+      sprintf(selectionText[1], "Bayar Sewa dan ambil alih ($%d)", hargaSewa + hargaAmbilAlih);
+    }
+    else if (listPetak[posisi].kartuProperty->jenisProperty == PROPERTY_STASION)
+    {
+      int jumlahStasion = jumlahStasionDimiliki(players[giliran]);
+      hargaSewa = kartuProperty->hargaSewa[jumlahStasion - 1];
+      hargaAmbilAlih = MULTIPLIER_AMBIL_ALIH * (kartuProperty->hargaBeli);
+      sprintf(selectionText[0], "Bayar Sewa ($%d)", hargaSewa);
+      sprintf(selectionText[1], "Bayar Sewa dan ambil alih ($%d)", hargaSewa + hargaAmbilAlih);
+    }
+    else if (listPetak[posisi].kartuProperty->jenisProperty == PROPERTY_PERUSAHAAN)
+    {
+      int jumlahPerusahaan = jumlahPerusahaanDimiliki(players[giliran]);
+      // TODO kali 2
+      hargaSewa = kartuProperty->hargaSewa[jumlahPerusahaan - 1];
+      hargaAmbilAlih = MULTIPLIER_AMBIL_ALIH * (kartuProperty->hargaBeli);
+      sprintf(selectionText[0], "Bayar Sewa (4x lempar dadu)", hargaSewa);
+      sprintf(selectionText[1], "Bayar Sewa dan ambil alih (4x lempar dadu + )", hargaSewa + hargaAmbilAlih);
+    }
     bool uangCukupUntukAmbilAlih = cekUangCukup(players[giliran].uang, hargaSewa + hargaAmbilAlih);
     int selection = playerSelectionMenu(selectionText, uangCukupUntukAmbilAlih ? 1 : 0);
 
-    // pasti bayar sewa, jadi bisa diletakkan di luar switch
-    changePlayerMoney(&players[giliran], -hargaSewa);
-    changePlayerMoney(playerProperties[posisi].pemilik, hargaSewa);
     switch (selection)
     {
     case 0:
+      changePlayerMoney(&players[giliran], -hargaSewa);
+      changePlayerMoney(playerProperties[posisi].pemilik, hargaSewa);
       break;
     case 1:
-      changePlayerMoney(&players[giliran], -hargaAmbilAlih);
-      changePlayerMoney(playerProperties[posisi].pemilik, hargaAmbilAlih);
+      changePlayerMoney(&players[giliran], -hargaSewa - hargaAmbilAlih);
+      changePlayerMoney(playerProperties[posisi].pemilik, hargaSewa + hargaAmbilAlih);
       playerProperties[posisi].pemilik->properties[posisi] = false;
       playerProperties[posisi].pemilik = &players[giliran];
       players[giliran].properties[posisi] = true;
@@ -1127,8 +1158,8 @@ void propertyHandler(Player *players, int giliran, int posisi, PlayerProperty pl
       break;
     }
   }
-  // menggunakan if karena setelah dibeli, pemilik yang baru dapat langsung upgrade jika sudah memiliki ketiga/kedua kota di kompleks yang sama
-  if (playerProperties[posisi].pemilik != NULL && playerProperties[posisi].pemilik->urutanBermain == giliran)
+  // kalau else dihapus, player dapat langsung membeli rumah setelah membeli properti
+  else if (playerProperties[posisi].pemilik != NULL && playerProperties[posisi].pemilik->urutanBermain == giliran)
   {
     bool pilihanSelesai = false;
     while (!pilihanSelesai)
@@ -1202,6 +1233,47 @@ void propertyHandler(Player *players, int giliran, int posisi, PlayerProperty pl
   }
 }
 
+bool punyaRumahSemuaKompleks(Player p, int posisi)
+{
+  bool punyaSemua = true;
+  int kompleksId = listPetak[posisi].kartuProperty->kompleksId;
+  for (int i = 0; i < listPetak[posisi].kartuProperty->hanyaDua ? 2 : 3; i++)
+  {
+    if (!p.properties[grupkompleks[kompleksId][i]])
+    {
+      punyaSemua = false;
+      break;
+    }
+  }
+  return punyaSemua;
+}
+
+int jumlahStasionDimiliki(Player p)
+{
+  int jumlah = 0;
+  for (int i = 0; i < 5; i++)
+  {
+    if (p.properties[grupkompleks[8][i]])
+    {
+      jumlah++;
+    }
+  }
+  return jumlah;
+}
+
+int jumlahPerusahaanDimiliki(Player p)
+{
+  int jumlah = 0;
+  for (int i = 0; i < 2; i++)
+  {
+    if (p.properties[grupkompleks[9][i]])
+    {
+      jumlah++;
+    }
+  }
+  return jumlah;
+}
+
 void beliProperty(Player *p, PlayerProperty *playerProperty, int posisi)
 {
   KartuProperty *kartuProperty = listPetak[posisi].kartuProperty;
@@ -1248,20 +1320,24 @@ void renderProperty(PlayerProperty playerProperty, int posisi)
   {
     printf(" ");
   }
-  gotoxy(tempKartuProperty->lokasiRumah.x, tempKartuProperty->lokasiRumah.y);
-  if (playerProperty.level == 0)
+  // cek apakah property merupakan kota atau bukan, kalau iya render rumah, kalau tidak jangan
+  if (tempKartuProperty->jenisProperty == PROPERTY_KOTA)
   {
-    printWithColor(tempKartuProperty->warna, "  ");
-  }
-  else
-  {
-    if (playerProperty.level <= 4)
+    gotoxy(tempKartuProperty->lokasiRumah.x, tempKartuProperty->lokasiRumah.y);
+    if (playerProperty.level == 0)
     {
-      printWithColor(tempKartuProperty->warna, "%dR", playerProperty.level);
+      printWithColor(tempKartuProperty->warna, "  ");
     }
     else
     {
-      printWithColor(tempKartuProperty->warna, "1H");
+      if (playerProperty.level <= 4)
+      {
+        printWithColor(tempKartuProperty->warna, "%dR", playerProperty.level);
+      }
+      else
+      {
+        printWithColor(tempKartuProperty->warna, "1H");
+      }
     }
   }
 }
