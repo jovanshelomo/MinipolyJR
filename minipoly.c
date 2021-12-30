@@ -21,12 +21,12 @@
 #define PROPERTY_STASION "PROPERTY_STASION"
 #define PROPERTY_PERUSAHAAN "PROPERTY_PERUSAHAAN"
 
-#define MULTIPLIER_SEWA_LENGKAP 1.5     // jika pemilik sudha memiliki kota lengkap, maka multiplier sewanya menjadi 1.5x nya
+#define MULTIPLIER_SEWA_LENGKAP 2       // jika pemilik sudah memiliki kota lengkap, maka multiplier sewanya menjadi 1.5x nya
 #define MULTIPLIER_AMBIL_ALIH 1.5       // jika player belum memiliki kota/stasion/perusahaan lengkap, maka multiplier ini digunakan
 #define MULTIPLIER_AMBIL_ALIH_LENGKAP 2 // jika player sudah memiliki kota/stasion/perusahaan lengkap, maka multiplier ini yang digunakan
 #define MULTIPLIER_JUAL_SEPIHAK 0.5     // ketika menjual sepihak, maka multiplier ini yang digunakan
 
-#define BOT_DELAY 500 // dalam ms
+#define BOT_DELAY 10 // dalam ms
 
 typedef struct Dadu
 {
@@ -157,8 +157,8 @@ void jualProperty(Player *p, PlayerProperty *playerProperty, int posisi);
 void ambilAlihProperty(Player *p, PlayerProperty *playerProperty, int posisi);
 
 void tambahKepemilikanProperty(Player *p, PlayerProperty *playerProperty, int posisi);
-void hapusKepemilikanProperty(Player *p, PlayerProperty *playerProperty, int posisi);
-void PindahKepemilikanProperty(Player *p, PlayerProperty *playerProperty, int posisi);
+void hapusKepemilikanProperty(PlayerProperty *playerProperty, int posisi);
+void PindahKepemilikanProperty(Player *pemilikBaru, PlayerProperty *playerProperty, int posisi);
 
 void renderProperty(PlayerProperty playerProperty, int posisi);
 
@@ -191,6 +191,7 @@ int getHargaJualProperty(PlayerProperty playerProperty, KartuProperty kartuPrope
 bool uangHabisHandler(Player *p, PlayerProperty playerProperties[40]);
 
 // shuffle
+void shuffleBotName(Player *players, int playerCount, int startBotIndex);
 void shufflePlayer(Player *players, int playerCount);
 void shuffleSymbol(Player *players, int playerCount);
 
@@ -302,9 +303,9 @@ int main()
     char startNotSelectedMenuString[][50] = {"     START  ",
                                              "  HOW TO PLAY  ",
                                              "     QUIT  "};
-    char startSelectedMenuString[][50] = {"   ▶ START ◀",
-                                          "▶ HOW TO PLAY ◀",
-                                          "   ▶ QUIT ◀"};
+    char startSelectedMenuString[][50] = {"   ⯈ START ⯇",
+                                          "⯈ HOW TO PLAY ⯇",
+                                          "   ⯈ QUIT ⯇"};
     selection = selectionMenu(startNotSelectedMenuString, startSelectedMenuString, 2, 32, 7);
     if (selection == 0) // start
     {
@@ -445,14 +446,14 @@ void printMultiLineRataKiri(char *teks, int x, int y, int color)
 
 void attentionBeforePlay()
 {
-  printWithColor(14, "════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════\n");
+  printf("════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════\n");
   printWithColor(12, "! PERHATIAN SEBELUM MEMULAI !\n\n");
-  printf("Pastikan window Anda full screen dengan garis atas serta garis bawah terlihat dengan jelas dan tidak ter-wrap.\n"
-         "jika garis terdapat 2 baris atau lebih atau garis bawah tidak terlihat tetapi sudah full screen, kecilkan ukuran font dengan cara\n");
+  printf("Pastikan window Anda FULL SCREEN dengan garis atas serta garis bawah terlihat dengan jelas dan tidak ter-wrap (terlihat 2 atau lebih baris).\n"
+         "jika garis ter-wrap atau garis bawah tidak terlihat tetapi sudah full screen, kecilkan ukuran font dengan cara\n");
   printWithColor(11, "CTRL + scroll mouse bawah\n\n");
   printf("Tekan ENTER jika Anda sudah yakin"
          "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-  printWithColor(14, "════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════");
+  printf("════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════");
   waitForEnter();
   system("cls");
 }
@@ -798,9 +799,9 @@ void initGame(Player *players, int *playerCount)
   char NotSelectedPlayerCount[][50] = {"  2 PLAYER  ",
                                        "  3 PLAYER  ",
                                        "  4 PLAYER  "};
-  char SelectedPlayerCount[][50] = {"▶ 2 PLAYER ◀",
-                                    "▶ 3 PLAYER ◀",
-                                    "▶ 4 PLAYER ◀"};
+  char SelectedPlayerCount[][50] = {"⯈ 2 PLAYER ⯇",
+                                    "⯈ 3 PLAYER ⯇",
+                                    "⯈ 4 PLAYER ⯇"};
   int selection = selectionMenu(NotSelectedPlayerCount, SelectedPlayerCount, 2, 34, 7);
   *playerCount = selection + 2;
   clearArea(0, 7, 72, 10);
@@ -810,11 +811,11 @@ void initGame(Player *players, int *playerCount)
                                     "    2 BOT     ",
                                     "    3 BOT     ",
                                     "    4 BOT     "};
-  char SelectedBotCount[][50] = {"▶ Tanpa Bot ◀",
-                                 "  ▶ 1 BOT ◀   ",
-                                 "  ▶ 2 BOT ◀   ",
-                                 "  ▶ 3 BOT ◀   ",
-                                 "  ▶ 4 BOT ◀   "};
+  char SelectedBotCount[][50] = {"⯈ Tanpa Bot ⯇",
+                                 "  ⯈ 1 BOT ⯇   ",
+                                 "  ⯈ 2 BOT ⯇   ",
+                                 "  ⯈ 3 BOT ⯇   ",
+                                 "  ⯈ 4 BOT ⯇   "};
   // selection + 1 artinya minimal 1 pemain manusia , selection +2 artinya minimal 0 pemain manusia
   int selectionBot = selectionMenu(notSelectedBotCount, SelectedBotCount, selection + 2, 33, 7);
   clearArea(0, 7, 72, 11);
@@ -835,12 +836,12 @@ void initGame(Player *players, int *playerCount)
     getchar();
     hideCursor();
   }
-  for (int i = *playerCount - selectionBot + 1; i <= *playerCount; i++)
+  int startBotIndex = *playerCount - selectionBot;
+  for (int i = startBotIndex; i < *playerCount; i++)
   {
-    players[i - 1].isBot = true;
-
-    snprintf(players[i - 1].nama, sizeof(players[i - 1].nama), "Bot %d", i);
+    players[i].isBot = true;
   }
+  shuffleBotName(players, *playerCount, startBotIndex);
   gotoxy(12, 9 + *playerCount - selectionBot);
   printf("Mengacak urutan permainan...\n");
   shufflePlayer(players, *playerCount);
@@ -900,18 +901,23 @@ void startGame(Player *players, int *playerCount, PlayerProperty playerPropertie
 
 void renderPemenang(Player p)
 {
-  char template[] = "      ██╗    ██╗██╗███╗   ██╗███╗   ██╗███████╗██████╗ \n"
-                    "      ██║    ██║██║████╗  ██║████╗  ██║██╔════╝██╔══██╗\n"
-                    "      ██║ █╗ ██║██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝\n"
-                    "      ██║███╗██║██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗\n"
-                    "      ╚███╔███╔╝██║██║ ╚████║██║ ╚████║███████╗██║  ██║\n"
-                    "       ╚══╝╚══╝ ╚═╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝\n"
-                    "                             \n"
-                    "                       Selamat Kepada";
-  printWithColor(10, "%s", template);
-  printTengah(p.nama, 6, 8, 49, 11);
-  printTengah("Tekan ENTER untuk melanjutkan", 6, 10, 49, 7);
+  char template[] = "\n\n"
+                    "                ███████████████████████████████████████████████████████████████████████████████████████\n"
+                    "                █▄ █▀▀▀█ ▄█▄ ▄█▄ ▀█▄ ▄█▄ ▀█▄ ▄█▄ ▄▄ █▄ ▄▄▀███▄ █▀▀▀█ ▄█▄ ▄█▄ ▀█▄ ▄█▄ ▀█▄ ▄█▄ ▄▄ █▄ ▄▄▀█\n"
+                    "                ██ █ █ █ ███ ███ █▄▀ ███ █▄▀ ███ ▄█▀██ ▄ ▄████ █ █ █ ███ ███ █▄▀ ███ █▄▀ ███ ▄█▀██ ▄ ▄█\n"
+                    "                ██▄▄▄█▄▄▄██▄▄▄█▄▄▄██▄▄█▄▄▄██▄▄█▄▄▄▄▄█▄▄█▄▄████▄▄▄█▄▄▄██▄▄▄█▄▄▄██▄▄█▄▄▄██▄▄█▄▄▄▄▄█▄▄█▄▄█\n"
+                    "                ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀\n"
+                    "         ██████╗██╗  ██╗██╗ ██████╗██╗  ██╗███████╗███╗   ██╗    ██████╗ ██╗███╗   ██╗███╗   ██╗███████╗██████╗ \n"
+                    "        ██╔════╝██║  ██║██║██╔════╝██║ ██╔╝██╔════╝████╗  ██║    ██╔══██╗██║████╗  ██║████╗  ██║██╔════╝██╔══██╗\n"
+                    "        ██║     ███████║██║██║     █████╔╝ █████╗  ██╔██╗ ██║    ██║  ██║██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝\n"
+                    "        ██║     ██╔══██║██║██║     ██╔═██╗ ██╔══╝  ██║╚██╗██║    ██║  ██║██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗\n"
+                    "        ╚██████╗██║  ██║██║╚██████╗██║  ██╗███████╗██║ ╚████║    ██████╔╝██║██║ ╚████║██║ ╚████║███████╗██║  ██║\n"
+                    "         ╚═════╝╚═╝  ╚═╝╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝    ╚═════╝ ╚═╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝\n";
+  printWithColor(14, "%s", template);
+  printTengah(p.nama, 8, 15, 104, 11);
+  printTengah("Tekan ENTER untuk melanjutkan", 8, 17, 104, 7);
   waitForEnter();
+  system("cls");
 }
 
 void turnManager(Player *players, int *playerCount, PlayerProperty playerProperties[40])
@@ -1440,7 +1446,7 @@ void jualProperty(Player *p, PlayerProperty *playerProperty, int posisi)
   KartuProperty *kartuProperty = listPetak[posisi].kartuProperty;
   int hargaJualProperty = MULTIPLIER_JUAL_SEPIHAK * (kartuProperty->hargaBeli + playerProperty->level * kartuProperty->hargaUpgrade);
   changePlayerMoney(p, hargaJualProperty);
-  hapusKepemilikanProperty(p, playerProperty, posisi);
+  hapusKepemilikanProperty(playerProperty, posisi);
 }
 
 void ambilAlihProperty(Player *p, PlayerProperty *playerProperty, int posisi)
@@ -1460,18 +1466,18 @@ void tambahKepemilikanProperty(Player *p, PlayerProperty *playerProperty, int po
   renderProperty(*playerProperty, posisi);
 }
 
-void hapusKepemilikanProperty(Player *p, PlayerProperty *playerProperty, int posisi)
+void hapusKepemilikanProperty(PlayerProperty *playerProperty, int posisi)
 {
-  p->properties[posisi] = false;
+  playerProperty->pemilik->properties[posisi] = false;
   playerProperty->pemilik = NULL;
   playerProperty->level = 0;
   renderProperty(*playerProperty, posisi);
 }
-void PindahKepemilikanProperty(Player *p, PlayerProperty *playerProperty, int posisi)
+void PindahKepemilikanProperty(Player *pemilikBaru, PlayerProperty *playerProperty, int posisi)
 {
   playerProperty->pemilik->properties[posisi] = false;
-  p->properties[posisi] = true;
-  playerProperty->pemilik = p;
+  pemilikBaru->properties[posisi] = true;
+  playerProperty->pemilik = pemilikBaru;
   renderProperty(*playerProperty, posisi);
 }
 
@@ -1918,7 +1924,7 @@ bool uangHabisHandler(Player *p, PlayerProperty playerProperties[40])
     int selection = playerSelectionManager(p, selectionText, 0, 3, "LANJUT_BANGKRUT");
     for (int i = 0; i < jumlahPropertyDimiliki; i++)
     {
-      posisiTerpilih[i] = true;
+      hapusKepemilikanProperty(&playerProperties[listPropertyDimiliki[i]], listPropertyDimiliki[i]);
     }
     clearPlayerSelectionText();
     return true;
@@ -1951,12 +1957,14 @@ bool uangHabisHandler(Player *p, PlayerProperty playerProperties[40])
         {
           indexPosisiSekarang = rotateIndex(indexPosisiSekarang, jumlahPropertyDimiliki - 1, true);
           clearKartu();
+          hideCursor();
           renderKartuProperty(listPetak[listPropertyDimiliki[indexPosisiSekarang]].kartuProperty);
         }
         else if (keyboardResult == ARROW_DOWN)
         {
           indexPosisiSekarang = rotateIndex(indexPosisiSekarang, jumlahPropertyDimiliki - 1, false);
           clearKartu();
+          hideCursor();
           renderKartuProperty(listPetak[listPropertyDimiliki[indexPosisiSekarang]].kartuProperty);
         }
         else if (keyboardResult == KEY_SPACE)
@@ -1972,6 +1980,7 @@ bool uangHabisHandler(Player *p, PlayerProperty playerProperties[40])
             jumlahUangHasilTerpilih -= hargaJualProperty;
           }
           // menjadikan posisiKepemilikan menjadi warna biru jika terpilih (warna 23)
+          showCursor();
           gotoxy(listPetak[listPropertyDimiliki[indexPosisiSekarang]].kartuProperty->tandaKepemilikan.x, listPetak[listPropertyDimiliki[indexPosisiSekarang]].kartuProperty->tandaKepemilikan.y);
           printWithColor(posisiTerpilih[indexPosisiSekarang] ? 23 : 7, "%s", p->simbol);
           clearArea(117, 37, 187, 37);
@@ -2004,7 +2013,7 @@ bool uangHabisHandler(Player *p, PlayerProperty playerProperties[40])
     {
       if (posisiTerpilih[i])
       {
-        hapusKepemilikanProperty(p, &playerProperties[listPropertyDimiliki[i]], listPropertyDimiliki[i]);
+        hapusKepemilikanProperty(&playerProperties[listPropertyDimiliki[i]], listPropertyDimiliki[i]);
       }
     }
     changePlayerMoney(p, jumlahUangHasilTerpilih);
@@ -2207,7 +2216,7 @@ int playerSelectionMenu(char selections[][50], int maxIndex, int yOffset)
   char selectedStrings[10][50];
   for (int i = 0; i <= maxIndex; i++)
   {
-    sprintf(selectedStrings[i], "▶ %s", selections[i]);
+    sprintf(selectedStrings[i], "⯈ %s", selections[i]);
   }
   return selectionMenu(notSelectedStrings, selectedStrings, maxIndex, 117, 33 + yOffset);
 }
@@ -2366,7 +2375,7 @@ int botParkirBebasHandler(Player *p, PlayerProperty playerProperties[40])
   delay(BOT_DELAY);
   return hasil;
 }
-// TODO masih bermasalah
+
 void botUangHabisHandler(Player *p, PlayerProperty playerProperties[40], int jumlahPropertyDimiliki, int listPropertyDimiliki[28], bool posisiTerpilih[], int *jumlahUangHasilTerpilih)
 {
   gotoxy(117, 33);
@@ -2387,7 +2396,22 @@ void clearKartu()
 {
   clearArea(116, 14, 156, 30);
 }
-
+void shuffleBotName(Player *players, int playerCount, int startBotIndex)
+{
+  char namaBot[][25] = {"Melon Mask (bot)", "bread Pitt (bot)", "Coolman Paris (bot)", "Nangomong Makarim (bot)", "Mike Swarovski (bot)", "Keanu Leaves (bot)", "Ariana Venti (bot)", "Rick Pastry (bot)", "Emma What Son (bot)", "Taylor Drift (bot)", "Kanye East (bot)"};
+  int namaIndex[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  for (int i = 0; i < 11; i++)
+  {
+    int random = randomInt(0, 11);
+    int temp = namaIndex[i];
+    namaIndex[i] = namaIndex[random];
+    namaIndex[random] = temp;
+  }
+  for (int i = startBotIndex; i < playerCount; i++)
+  {
+    strcpy(players[i].nama, namaBot[namaIndex[i - startBotIndex]]);
+  }
+}
 void shufflePlayer(Player *players, int playerCount)
 {
   // metode fisher yates shuffle
