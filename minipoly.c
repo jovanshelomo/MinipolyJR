@@ -2399,10 +2399,10 @@ void clearKartu()
 void shuffleBotName(Player *players, int playerCount, int startBotIndex)
 {
   char namaBot[][25] = {"Melon Mask (bot)", "bread Pitt (bot)", "Coolman Paris (bot)", "Nangomong Makarim (bot)", "Mike Swarovski (bot)", "Keanu Leaves (bot)", "Ariana Venti (bot)", "Rick Pastry (bot)", "Emma What Son (bot)", "Taylor Drift (bot)", "Kanye East (bot)"};
-  int namaIndex[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  int namaIndex[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   for (int i = 0; i < 11; i++)
   {
-    int random = randomInt(0, 11);
+    int random = randomInt(0, 10);
     int temp = namaIndex[i];
     namaIndex[i] = namaIndex[random];
     namaIndex[random] = temp;
