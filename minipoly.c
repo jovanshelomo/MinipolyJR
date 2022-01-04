@@ -143,7 +143,7 @@ void lompatKe(Player *p, int index);                                            
 void majuHingga(Player *p, int index);                                                    // berfungsi untuk memajukan player hingga posisi N
 void majuHinggaJenisProperty(Player *p, char *jenis);                                     // berfungsi untuk memajukan player hingga posisi yang memiliki tipe property tertentu
 void cekMenyentuhStart(Player *p);                                                        // berfungsi untuk mengecek apakah player sudah menyentuh start
-void renderPosisiPlayer(Player *p, int sebelum);                                          // menghapus posisi player sebelumnya dan menampilkan yang baru
+void renderPosisiPlayer(Player p, int sebelum);                                           // menghapus posisi player sebelumnya dan menampilkan yang baru
 void lompatKePenjara(Player *p);                                                          // berfungsi untuk melompatkan player ke penjara
 bool cekUangCukup(int uang, int harga);                                                   // berfungsi untuk mengecek apakah uang cukup untuk harga yang ditentukan
 void turnManager(Player *players, int *playerCount, PlayerProperty playerProperties[40]); // berfungsi untuk mengatur turn
@@ -597,13 +597,13 @@ int renderSelectionMenu(char notSelectedStrings[][50], char selectedStrings[][50
 void renderBoard()
 {
   char board[] = "╔══════════════╦════════╦════════╦════════╦════════╦════════╦════════╦════════╦════════╦════════╦══════════════╗\n"
-                 "║  ║ HANYA  ║  ║  GZH   ║  PLN   ║  BJG   ║  SHN   ║  GBG   ║  MSL   ║  DANA  ║  BDX   ║  PAR   ║    PARKIR    ║\n"
+                 "║    HANYA     ║  GZH   ║  PLN   ║  BJG   ║  SHN   ║  GBG   ║  MSL   ║  DANA  ║  BDX   ║  PAR   ║    PARKIR    ║\n"
                  "║ MENGUNJUNGI  ║        ║        ║        ║        ║        ║        ║  UMUM  ║        ║        ║    BEBAS     ║\n"
-                 "║  ║PENJARA ║  ║        ║        ║        ║        ║        ║        ║        ║        ║        ║              ║\n"
-                 "║              ║        ║        ║        ║        ║        ║        ║        ║        ║        ║      __      ║\n"
-                 "║  ║  ║  ║  ║  ║  $140  ║        ║  $140  ║  $160  ║        ║  $180  ║        ║  $180  ║  $200  ║    _| =\\__   ║\n"
-                 "║  ║  ║  ║  ║  ║████████║  $150  ║████████║████████║  $200  ║████████║  $$$$  ║████████║████████║   /o____o_\\  ║\n"
-                 "╠══════════════╬════════╩════════╩════════╩════════╩════════╩════════╩════════╩════════╩════════╬══════════════╣\n"
+                 "║    ╔═════════╣        ║        ║        ║        ║        ║        ║        ║        ║        ║              ║\n"
+                 "║    ║ PENJARA ║        ║        ║        ║        ║        ║        ║        ║        ║        ║      __      ║\n"
+                 "║    ║         ║  $140  ║        ║  $140  ║  $160  ║        ║  $180  ║        ║  $180  ║  $200  ║    _| =\\__   ║\n"
+                 "║    ║ ║  ║  ║ ║████████║  $150  ║████████║████████║  $200  ║████████║  $$$$  ║████████║████████║   /o____o_\\  ║\n"
+                 "╠════╩═════════╬════════╩════════╩════════╩════════╩════════╩════════╩════════╩════════╩════════╬══════════════╣\n"
                  "║    TYO     ██║                                                                                ║██    RTD     ║\n"
                  "║            ██║                                                                                ║██            ║\n"
                  "║    $120    ██║       ┌──────────────────────────┐                                             ║██    $220    ║\n"
@@ -914,7 +914,7 @@ void startGame(Player *players, int *playerCount, PlayerProperty playerPropertie
   initPlayerStats(players, *playerCount);
   for (int i = 0; i < *playerCount; i++)
   {
-    renderPosisiPlayer(&players[i], 0);
+    renderPosisiPlayer(players[i], 0);
   }
   turnManager(players, playerCount, playerProperties);
   system("cls");
@@ -1158,7 +1158,7 @@ void majuNLangkah(Player *p, int N)
     {
       p->posisi = rotateIndex(p->posisi, 39, false);
     }
-    renderPosisiPlayer(p, posisiSebelum);
+    renderPosisiPlayer(*p, posisiSebelum);
     cekMenyentuhStart(p);
   }
 }
@@ -1166,7 +1166,7 @@ void lompatKe(Player *p, int index)
 {
   int posisiSebelum = p->posisi;
   p->posisi = index;
-  renderPosisiPlayer(p, posisiSebelum);
+  renderPosisiPlayer(*p, posisiSebelum);
   cekMenyentuhStart(p);
 }
 void majuHingga(Player *p, int index)
@@ -1193,8 +1193,8 @@ void majuHinggaJenisProperty(Player *p, char *jenis)
 }
 void lompatKePenjara(Player *p)
 {
-  lompatKe(p, 10);
   p->sisaTurnPenjara = 4;
+  lompatKe(p, 10);
 }
 bool cekUangCukup(int uang, int harga)
 {
@@ -1208,22 +1208,53 @@ void cekMenyentuhStart(Player *p)
     changePlayerMoney(p, 200);
   }
 }
-void renderPosisiPlayer(Player *p, int sebelum)
+void renderPosisiPlayer(Player p, int sebelum)
 {
-
-  gotoxy(listPetak[sebelum].lokasiPlayer.x + p->urutanBermain, listPetak[sebelum].lokasiPlayer.y);
-  printf(" ");
-  if (!p->isBangkrut)
+  // hapus hasil render player di posisi sebelumnya
+  if (sebelum == 10)
   {
-    gotoxy(listPetak[p->posisi].lokasiPlayer.x + p->urutanBermain, listPetak[p->posisi].lokasiPlayer.y);
-    printWithColor(240, "%s", p->simbol);
+    // special case jika penjara
+    gotoxy(8 + p.urutanBermain, 5);
+    printf(" ");
+    gotoxy(2 + (p.urutanBermain % 2), 4 + (p.urutanBermain > 1 ? 1 : 0));
+    printf(" ");
+  }
+  else
+  {
+    gotoxy(listPetak[sebelum].lokasiPlayer.x + p.urutanBermain, listPetak[sebelum].lokasiPlayer.y);
+    printf(" ");
+  }
+
+  // render posisi baru player
+  if (!p.isBangkrut)
+  {
+    // special case jika penjara
+    if (p.posisi == 10)
+    {
+      // cek apakah sedang dalam penjara
+      if (p.sisaTurnPenjara > 0)
+      {
+        gotoxy(8 + p.urutanBermain, 5);
+      }
+      // kalau tidak
+      else
+      {
+        gotoxy(2 + (p.urutanBermain % 2), 4 + (p.urutanBermain > 1 ? 1 : 0));
+      }
+    }
+    else
+    {
+      gotoxy(listPetak[p.posisi].lokasiPlayer.x + p.urutanBermain, listPetak[p.posisi].lokasiPlayer.y);
+    }
+    printWithColor(240, "%s", p.simbol);
   }
 }
+
 void bangkrutkanPlayer(Player *p)
 {
   p->isBangkrut = true;
   renderPlayerMoney(*p, 4);
-  renderPosisiPlayer(p, p->posisi);
+  renderPosisiPlayer(*p, p->posisi);
 }
 
 void propertyHandler(Player *players, int giliran, int posisi, PlayerProperty playerProperties[40])
@@ -2393,13 +2424,15 @@ int botHandler(Player p, int maxIndex, int yOffset, char botContext[], PlayerPro
   }
   else if (strcmp(botContext, "LANJUT_KARTU_KESEMPATAN") == 0)
   {
+    delay(1000);
     hasil = 0;
-    printf("Bot menggunakan kartu kesempatan");
+    printf("Bot melaksanakan kartu kesempatan");
   }
   else if (strcmp(botContext, "LANJUT_KARTU_DANA_UMUM") == 0)
   {
+    delay(1000);
     hasil = 0;
-    printf("Bot menggunakan kartu dana umum");
+    printf("Bot melaksanakan kartu dana umum");
   }
   else if (strcmp(botContext, "DOUBLE_3X_PENJARA") == 0)
   {
