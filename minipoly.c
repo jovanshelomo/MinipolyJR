@@ -26,7 +26,7 @@
 #define MULTIPLIER_AMBIL_ALIH_LENGKAP 2 // jika player sudah memiliki kota/stasion/perusahaan lengkap, maka multiplier ini yang digunakan
 #define MULTIPLIER_JUAL_SEPIHAK 0.5     // ketika menjual sepihak, maka multiplier ini yang digunakan
 
-#define BOT_DELAY 1 // dalam ms
+#define BOT_DELAY 800 // dalam ms
 
 typedef struct Dadu
 {
@@ -287,8 +287,8 @@ int grupkompleks[10][4] = {
     {26, 27, 29},
     {31, 32, 34},
     {37, 39},
-    {5, 15, 25, 35},
-    {12, 28}};
+    {5, 15, 25, 35}, // stasion
+    {12, 28}};       // perusahaan
 
 HANDLE hConsole;
 
@@ -388,6 +388,17 @@ void showCursor()
   info.dwSize = 100;
   info.bVisible = TRUE;
   SetConsoleCursorInfo(hConsole, &info);
+}
+void clearArea(int xStart, int yStart, int xEnd, int yEnd)
+{
+  for (int i = yStart; i <= yEnd; i++)
+  {
+    gotoxy(xStart, i);
+    for (int j = xStart; j <= xEnd; j++)
+    {
+      printf(" ");
+    }
+  }
 }
 void printWithColor(int color, char text[], ...)
 {
@@ -694,18 +705,6 @@ int keyboardEventHandler()
   else
   {
     return ch;
-  }
-}
-
-void clearArea(int xStart, int yStart, int xEnd, int yEnd)
-{
-  for (int i = yStart; i <= yEnd; i++)
-  {
-    gotoxy(xStart, i);
-    for (int j = xStart; j <= xEnd; j++)
-    {
-      printf(" ");
-    }
   }
 }
 

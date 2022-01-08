@@ -1,0 +1,147 @@
+Objektif: Menjadi seorang pemain tersisa yang dinyatakan sebagai pemenang melalui pembelian, penyewaan,
+serta penjualan properti dan mengalahkan pemain lawan hingga dinyatakan bangkrut.
+
+Persiapan: Setelah Anda memilih opsi start, Anda akan diarahkan untuk memilih jumlah pemain yang akan
+bermain dan dengan siapa Anda akan bermain, Anda dapat memilih hendak bermain melawan manusia atau Anda
+dapat memilih bot sebagai lawan bermain, setelah itu giliran bermain akan ditentukan secara acak.
+Pada awal permainan, semua bidak pemain akan diletakkan pada petak “GO”. Masing-masing pemain diberikan
+modal awal sebesar $1500.
+
+
+Permainan:
+
+         ┌─────────┐   ┌─────────┐
+         │         │   │  o   o  │
+         │    o    │   │  o   o  │
+         │         │   │  o   o  │
+         └─────────┘   └─────────┘
+      1. Kocoklah dadu saat giliran Anda tiba untuk menggerakan bidak milik Anda.
+         Bidak Anda akan bergerak sesuai dengan banyak langkah yang ditentukan dari hasil kocokan dadu Anda.
+      2. Bila Anda mendapat angka kembar pada kedua dadu, maka Anda akan mendapat giliran mengocok dadu lagi,
+         namun bila Anda mengocok dadu kembar sebanyak 3 kali berturut-turut dalam 1 kali giliran, maka Anda
+         akan dimasukkan ke penjara secara langsung tanpa bidak Anda maju terlebih dahulu.
+      3. Terdapat beberapa petak dengan ketentuan khusus, di antaranya:
+
+
+               ╔══════════════╗
+               ║              ║
+               ║              ║
+               ║ ▒█▀▀█ ▒█▀▀▀█ ║
+               ║ ▒█░▄▄ ▒█░░▒█ ║
+               ║ ▒█▄▄█ ▒█▄▄▄█ ║
+               ║     $200     ║
+               ╚══════════════╝
+             GO: Tiap kali bidak Anda berhenti atau melewati petak “GO”, baik melalui pelemparan dadu atau
+                 melalui instruksi pada kartu yang Anda dapatkan, Anda akan mendapat uang sebesar $200. 
+
+
+               ╔══════════════╗
+               ║    TYO     ██║
+               ║            ██║
+               ║    $120    ██║
+               ╚══════════════╝
+
+               ┌─────────────────────────────┐
+               │            Tokyo            │
+               ├─────────────────────────────┤
+               │           Sewa $8           │
+               │ Jika sudah memiliki:        │
+               │ 1 Rumah : $40               │
+               │ 1 Rumah : $100              │
+               │ 1 Rumah : $300              │
+               │ 1 Rumah : $450              │
+               │ 1 Rumah : $600              │
+               │ Sewa jika lengkap : 200%    │
+               │ Harga rumah & hotel : $50   │
+               │                             │
+               │ Harga jual dari total asset │
+               │ Secara sepihak : 50%        │
+               │ Ambil alih     : 150%/200%  │
+               └─────────────────────────────┘
+             Tanah Properti: Tergantung pada kondisi tanah tersebut
+               •  Bila tanah tersebut belum dimiliki siapapun: Anda berhak memilih untuk membeli tanah pada
+                  petak tersebut sesuai dengan harga yang tertera pada papan atau menolak pembelian tanah tersebut.
+               •  Bila Anda berhenti pada tanah yang sudah Anda miliki, Anda dapat membangun sejumlah rumah (max 4)
+                  di tanah tersebut sesuai dengan harga yang tertera pada kartu properti, Setelah Anda memiliki 4
+                  rumah pada tanah tersebut, Anda dapat membeli hotel pada giliran selanjutnya jika Anda menginjak
+                  petak rumah Anda. Selain itu, Anda juga dapat memilih untuk menjual tanah beserta properti yang
+                  Anda miliki.
+               •  Bila Anda berhenti pada tanah yang sudah dimiliki pemain lain: Anda wajib membayar biaya sewa
+                  seharga yang tertera pada kartu properti tanah tersebut. Biaya yang dibayar tergantung pada
+                  banyaknya bangunan yang ada pada tanah tersebut dan kelengkapan properti. Selain itu, Anda 
+                  diberikan pilihan untuk dapat membeli kepemilikan tanah beserta properti pemain lain tersebut
+                  namun dengan harga yang dinaikkan.
+
+               Tanda-tanda kepemilikan properti dan rumah
+
+                    ╔══════════════╗        ╔══════════════╗              ╔══════════════╗
+                    ║    SYD     ██║        ║    SYD     ██║              ║    SYD     ██║
+                    ║            ██║        ║            ██║ Ω            ║            2R║ Ω
+                    ║    $60     ██║        ║    $60     ██║              ║    $60     ██║
+                    ╚══════════════╝        ╚══════════════╝              ╚══════════════╝
+
+                    properti belum          properti sudah                properti sudah dimiliki pemain lain
+                    dimiliki siapapun       dimiliki pemain lain (Ω)      dan sudah terdapat 2 rumah.
+                                                                          jika hotel maka tertulis 1H
+
+
+               ╔══════════════╗      ╔══════════════╗
+               ║  DANA UMUM   ║      ║  KESEMPATAN  ║
+               ║              ║      ║              ║
+               ║    $$$$      ║      ║     ????     ║
+               ╚══════════════╝      ╚══════════════╝
+             Dana Umum/Kesempatan: Anda wajib mengambil kartu dana umum/kesempatan dan melakukan perintah sesuai
+             yang tertera pada kartu tersebut. Jika Anda mendapat kartu bebas penjara maka kartu tersebut akan
+             tersimpan dan dapat digunakan ketika Anda masuk penjara.
+
+
+                                    ╔════════╗
+                                    ║ LUXURY ║
+                                    ║  TAX   ║
+               ╔══════════════╗     ║        ║
+               ║  INCOME TAX  ║     ║        ║
+               ║              ║     ║        ║
+               ║   PAY $200   ║     ║PAY $75 ║
+               ╚══════════════╝     ╚════════╝
+             Income Tax/Luxury Tax: Anda wajib membayar pajak seharga yang tertera pada papan petak tersebut.
+
+
+               ╔══════════════╗
+               ║    HANYA     ║
+               ║ MENGUNJUNGI  ║
+               ║    ╔═════════╣
+               ║    ║ PENJARA ║
+               ║    ║         ║
+               ║    ║ ║  ║  ║ ║
+               ╚════╩═════════╝
+             Hanya Mengunjugi (Penjara): Anda hanya menumpang lewat pada petak ini.
+
+             Masuk Penjara: 
+               •  Anda dapat ditahan dalam penjara, jika bidak Anda menginjak petak “Masuk Penjara”,
+                  mendapatkan instruksi dari kartu yang Anda dapatkan, atau jika Anda mendapatkan dadu kembar
+                  sebanyak 3 kali dalam 1 giliran bermain
+               •  Anda dapat keluar dari penjara dengan diberi pilihan membayar denda sebanyak $50 atau dengan
+                  mengocok dadu dan berusaha mendapatkan dadu kembar. Selain itu, Anda dapat menggunakan kartu
+                  bebas penjara jika Anda memilikinya. 
+
+
+               ╔══════════════╗
+               ║    PARKIR    ║
+               ║    GRATIS    ║
+               ║              ║
+               ║      __      ║
+               ║    _| =\__   ║
+               ║   /o____o_\  ║
+               ╚══════════════╝
+              Parkir Bebas: Anda dapat memilih petak sesuai dengan keinginan Anda dan berpindah pada petak
+              tersebut tanpa melalui pengocokan dadu (Anda tidak dapat memilik petak parkir bebas sebagai
+              petak tujuan!)
+
+      4. Bila uang Anda tidak cukup untuk membayar biaya sewa ketika menginjak tanah pemain lain atau ingin
+         membeli tanah atau membangun rumah/hotel, Anda bisa menjual properti (tanah, rumah, atau hotel)
+         yang Anda miliki jika harga jual property Anda masih mencukupi.
+
+      5. Setiap giliran bermain suatu pemain sudah selesai, giliran bermain akan dilanjutkan kepada pemain
+         selanjutnya sesuai dengan urutan yang telah ditentukan di awal permainan.
+
+      6. Permainan akan terus berjalan sampai tersisa satu pemain yang dikatakan sebagai pemenang.
