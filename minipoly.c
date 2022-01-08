@@ -1,3 +1,9 @@
+/*
+Author: Jovan Shelomo & Rahma Alia Latifa
+Latest ver: 1.0.0 / 8 jan 2022
+compiler: gcc 17
+*/
+
 #define _CRT_RAND_S
 
 #include <conio.h>
