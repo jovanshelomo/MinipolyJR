@@ -122,12 +122,12 @@ Permainan:
                   sebanyak 3 kali dalam 1 giliran bermain
                •  Anda dapat keluar dari penjara dengan diberi pilihan membayar denda sebanyak $50 atau dengan
                   mengocok dadu dan berusaha mendapatkan dadu kembar. Selain itu, Anda dapat menggunakan kartu
-                  bebas penjara jika Anda memilikinya. 
+                  bebas penjara jika Anda memilikinya.
 
 
                ╔══════════════╗
                ║    PARKIR    ║
-               ║    GRATIS    ║
+               ║    BEBAS     ║
                ║              ║
                ║      __      ║
                ║    _| =\__   ║
