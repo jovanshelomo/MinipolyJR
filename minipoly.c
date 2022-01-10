@@ -1,6 +1,6 @@
 /*
 Author: Jovan Shelomo & Rahma Alia Latifa
-Latest ver: 1.1.0 / 9 jan 2022
+Latest ver: 1.2.0 / 10 jan 2022
 compiler: gcc 17
 */
 
@@ -33,6 +33,9 @@ compiler: gcc 17
 #define MULTIPLIER_SELL_UNILATERALLY 0.5 // ketika menjual sepihak, maka multiplier ini yang digunakan
 
 #define BOT_DELAY 800 // dalam ms
+
+#define FILE_NAME_HOW_TO_PLAY "howtoplay.txt"
+#define FILE_NAME_LEADERBOARD "leaderboard"
 
 typedef struct Dice
 {
@@ -86,6 +89,31 @@ typedef struct Player
   bool properties[40];       // setiap index merujuk kepada nilai kebenaran kepemilikan property pada petak index oleh player. Contoh, apabila player memiliki property di jakarta, maka properties[39] = true
 } Player;
 
+typedef struct Duration
+{
+  int hours;
+  int minutes;
+  int seconds;
+} Duration;
+
+typedef struct Date
+{
+  int year;
+  int month;
+  int day;
+  int hour;
+  int minute;
+  int second;
+} Date;
+
+typedef struct PlayerLeaderboard
+{
+  struct Duration gameDuration;
+  Date date;
+  char name[26];
+  int money;
+} PlayerLeaderboard;
+
 typedef struct PlayerProperty
 {
   struct Player *owner; // pointer ke pemilik property
@@ -102,8 +130,8 @@ void hideCursor();                                                 // menyembuny
 void showCursor();                                                 // menampilkan cursor
 void clearArea(int xStart, int yStart, int xEnd, int yEnd);        // berfungsi untuk menghapus area di layar
 int rotateIndex(int currentIndex, int maxIndex, bool isPlus);      // berfungsi untuk merotasi index jika sudah terakhir atau ke paling atas
-void printCenter(char *teks, int x, int y, int lebar, int color);  // untuk memprint teks di tengah
-void printMultiLineAlignLeft(char *teks, int x, int y, int color); // untuk print multi line teks rata kiri
+void printCenter(char *text, int x, int y, int lebar, int color);  // untuk memprint teks di tengah
+void printMultiLineAlignLeft(char *text, int x, int y, int color); // untuk print multi line teks rata kiri
 int keyboardEventHandler();                                        // menghandle keyboard arrow dan enter
 void waitForEnter();                                               // menunggu keyboard enter
 void flushInput();                                                 // membersihkan input keyboard
@@ -117,6 +145,14 @@ void quitGame();
 
 void renderWinner(Player p);
 
+// leaderboard
+Date getcurrentDate();
+int getLeaderboardDataCount();
+void addToLeaderboard(Player p, Duration gameDuration);
+void dateToString(Date date, char *str);
+void renderLeaderboard();
+
+// dalam permainan
 void renderHowToPlay();
 void renderLogo();
 int selectionMenu(char notSelectedStrings[][50], char selectedStrings[][50], int maxIndex, int x, int y);
@@ -124,7 +160,7 @@ int renderSelectionMenu(char notSelectedStrings[][50], char selectedStrings[][50
 void renderBoard();
 int playerSelectionHuman(char selections[][50], int maxIndex, int yOffset); // untuk player memilih ketika sedang berada dalam in-game
 int playerSelectionManager(Player p, char selections[][50], int maxIndex, int yOffset, char botContext[], PlayerProperty playerProperties[40]);
-void printGiliranText(Player p);
+void printTurnText(Player p);
 void clearGiliranText();
 void clearPlayerSelectionText();
 
@@ -194,8 +230,8 @@ bool jailHandler(Player *p);
 
 int getPropertySellPrice(PlayerProperty playerProperty, PropertyCard propertyCard);
 
-// ketika uang habis, maka player harus menjual asetnya atau bangkrut
-bool runOutOfMoneyHandler(Player *p, PlayerProperty playerProperties[40]);
+// ketika uang negatif, maka player harus menjual asetnya atau bangkrut
+bool insufficientMoneyHandler(Player *p, PlayerProperty playerProperties[40]);
 
 // shuffle
 void shuffleBotName(Player *players, int playerCount, int startBotIndex);
@@ -208,7 +244,7 @@ int botLevelEasy(Player p, int maxIndex, int yOffset, char botContext[], PlayerP
 int botLevelMedium(Player p, int maxIndex, int yOffset, char botContext[], PlayerProperty playerProperties[40]);
 int botLevelHard(Player p, int maxIndex, int yOffset, char botContext[], PlayerProperty playerProperties[40]);
 int FreeParkingBotHandler(Player *p, PlayerProperty playerProperties[40]);
-void runOutOfMoneyBotHandler(Player *p, PlayerProperty playerProperties[40], int totalOwnedProperties, int listOwnedProperty[28], bool selectedPositions[], int *totalMoneyFromSelectedProperties);
+void insufficientMoneyBotHandler(Player *p, PlayerProperty playerProperties[40], int totalOwnedProperties, int listOwnedProperty[28], bool selectedPositions[], int *totalMoneyFromSelectedProperties);
 
 PropertyCard propertyCards[28] = {
     {PROPERTY_CITY, 0, "MLB", "Melbourne", 60, {2, 10, 30, 90, 160, 250}, 50, 31, true, {17, 41}, {13, 40}, {13, 41}},
@@ -307,16 +343,18 @@ int main()
 
   hideCursor();
   int selection = 0;
-  while (selection != 2)
+  while (selection != 3)
   {
     renderLogo();
     char startNotSelectedMenuString[][50] = {"     START  ",
                                              "  HOW TO PLAY  ",
+                                             "  LEADERBOARD  ",
                                              "     QUIT  "};
     char startSelectedMenuString[][50] = {"   ⯈ START ⯇",
                                           "⯈ HOW TO PLAY ⯇",
+                                          "⯈ LEADERBOARD ⯇",
                                           "   ⯈ QUIT ⯇"};
-    selection = selectionMenu(startNotSelectedMenuString, startSelectedMenuString, 2, 32, 7);
+    selection = selectionMenu(startNotSelectedMenuString, startSelectedMenuString, 3, 32, 7);
     if (selection == 0) // start
     {
       playGame();
@@ -325,7 +363,11 @@ int main()
     {
       howToPlay();
     }
-    else // quit
+    else if (selection == 2)
+    {
+      renderLeaderboard();
+    }
+    else if (selection == 3) // quit
     {
       quitGame();
     }
@@ -462,6 +504,40 @@ void printMultiLineAlignLeft(char *text, int x, int y, int color)
   }
 }
 
+void waitForEnter()
+{
+  while (_getch() != KEY_ENTER)
+    ;
+}
+
+void flushInput()
+{
+  while (_kbhit())
+  {
+    _getch();
+  }
+}
+
+Date getcurrentDate()
+{
+  time_t t = time(NULL);
+  struct tm *tm = localtime(&t);
+  Date date;
+  date.year = tm->tm_year + 1900;
+  date.month = tm->tm_mon + 1;
+  date.day = tm->tm_mday;
+  date.hour = tm->tm_hour;
+  date.minute = tm->tm_min;
+  date.second = tm->tm_sec;
+  return date;
+}
+
+void renderDate(Date date)
+{
+  char month[][10] = {"Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"};
+  printf("%d %s %d %02d:%02d:%02d", date.day, month[date.month - 1], date.year, date.hour, date.minute, date.second);
+}
+
 void attentionBeforePlay()
 {
   printf("════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════\n");
@@ -488,13 +564,196 @@ void playGame()
   int playerCount = 0;
   initGame(players, &playerCount);
 
-  // main game
+  // main game dan menghitung lama permainan
+  struct timespec start, end;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+
   startGame(players, &playerCount, playerProperties);
+
+  clock_gettime(CLOCK_MONOTONIC, &end);
+  Duration gameDuration;
+  gameDuration.hours = (end.tv_sec - start.tv_sec) / 3600;
+  gameDuration.minutes = ((end.tv_sec - start.tv_sec) % 3600) / 60;
+  gameDuration.seconds = ((end.tv_sec - start.tv_sec) % 3600) % 60;
+
+  int winner;
+  // cek siapa pemenangnya
+  for (int i = 0; i < playerCount; i++)
+  {
+    if (!players[i].isBankrupt)
+    {
+      winner = i;
+    }
+  }
+  // menambahkan pemain ke leaderboard jika bukan bot
+  if (!players[winner].isBot)
+  {
+    addToLeaderboard(players[winner], gameDuration);
+  }
+  renderWinner(players[winner]);
 }
+
 void howToPlay()
 {
   renderHowToPlay();
 }
+
+int getLeaderboardDataCount()
+{
+  FILE *leaderboardFile = fopen(FILE_NAME_LEADERBOARD, "rb");
+  if (leaderboardFile == NULL)
+  {
+    return 0;
+  }
+  int dataCount = 0;
+  fseek(leaderboardFile, 0, SEEK_END);
+  dataCount = ftell(leaderboardFile) / sizeof(PlayerLeaderboard);
+  fclose(leaderboardFile);
+  return dataCount;
+}
+
+void addToLeaderboard(Player p, Duration gameDuration)
+{
+  int structSize = sizeof(PlayerLeaderboard);
+  // open file
+  FILE *leaderboardFile = fopen(FILE_NAME_LEADERBOARD, "rb+");
+  if (leaderboardFile == NULL)
+  {
+    fclose(leaderboardFile);
+    // create file
+    leaderboardFile = fopen(FILE_NAME_LEADERBOARD, "ab+");
+  }
+
+  // menghitung jumlah data yang ada pada file
+  int dataCount = getLeaderboardDataCount();
+
+  // membuat struct playerLeaderboard
+  PlayerLeaderboard pl;
+  strcpy(pl.name, p.name);
+  pl.money = p.money;
+  pl.gameDuration = gameDuration;
+  pl.date = getcurrentDate();
+
+  // mengecek nama yang sama, kalau ada maka timpa
+  PlayerLeaderboard temp;
+  PlayerLeaderboard temp2;
+  rewind(leaderboardFile);
+  bool isSameName = false;
+  while (fread(&temp, structSize, 1, leaderboardFile))
+  {
+    if (strcmp(temp.name, pl.name) == 0)
+    {
+      isSameName = true;
+      break;
+    }
+  }
+  if (isSameName)
+  {
+    if (pl.money > temp.money)
+    { // langsung timpa
+      fseek(leaderboardFile, -structSize, SEEK_CUR);
+      fwrite(&pl, structSize, 1, leaderboardFile);
+    }
+  }
+  else
+  {
+    // append data ke akhir file
+    fseek(leaderboardFile, 0, SEEK_END);
+    fwrite(&pl, structSize, 1, leaderboardFile);
+    dataCount++;
+  }
+
+  // sort data menggunakan bubble sort
+  if (dataCount > 1)
+  {
+    rewind(leaderboardFile);
+    for (int i = 0; i < dataCount; i++)
+    {
+      for (int j = 0; j < dataCount - i - 1; j++)
+      {
+        fread(&temp, sizeof(PlayerLeaderboard), 1, leaderboardFile);
+        fread(&temp2, sizeof(PlayerLeaderboard), 1, leaderboardFile);
+        if (temp.money < temp2.money)
+        {
+          fseek(leaderboardFile, -(sizeof(PlayerLeaderboard) * 2), SEEK_CUR);
+          fwrite(&temp2, sizeof(PlayerLeaderboard), 1, leaderboardFile);
+          fwrite(&temp, sizeof(PlayerLeaderboard), 1, leaderboardFile);
+        }
+        fseek(leaderboardFile, -sizeof(PlayerLeaderboard), SEEK_CUR);
+      }
+      rewind(leaderboardFile);
+    }
+  }
+
+  // jika data melebihi 10, hapus data terakhir
+  if (dataCount > 10)
+  {
+    rewind(leaderboardFile);
+    FILE *tempFile = fopen("temp", "wb");
+    for (int i = 0; i < 10; i++)
+    {
+      fread(&temp, sizeof(PlayerLeaderboard), 1, leaderboardFile);
+      fwrite(&temp, sizeof(PlayerLeaderboard), 1, tempFile);
+    }
+    fclose(leaderboardFile);
+    fclose(tempFile);
+    remove(FILE_NAME_LEADERBOARD);
+    rename("temp", FILE_NAME_LEADERBOARD);
+  }
+  else
+  {
+    fclose(leaderboardFile);
+  }
+}
+
+void dateToString(Date date, char *str)
+{
+  // change month to string
+  char month[12][4] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+  sprintf(str, "%d %s %d %02d:%02d:%02d", date.day, month[date.month - 1], date.year, date.hour, date.minute, date.second);
+}
+
+void renderLeaderboard()
+{
+  system("cls");
+
+  char templateLeaderboard[] = "╔════╦═════════════════════════════╦══════════════════╦═══════════════════════════════╦════════════════╗\n"
+                               "║    ║                             ║                  ║                               ║                ║\n"
+                               "║ No ║         Nama Player         ║       Uang       ║             Tanggal           ║  Lama Bermain  ║\n"
+                               "║    ║                             ║                  ║                               ║                ║\n";
+  char templateIfEmpty[] = "╠════╩═════════════════════════════╩══════════════════╩═══════════════════════════════╩════════════════╣\n"
+                           "║                                                                                                      ║\n"
+                           "║                                   Belum Ada Pemain di Leaderboard                                    ║\n"
+                           "║                                                                                                      ║\n"
+                           "╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝\n";
+
+  printf(templateLeaderboard);
+  FILE *leaderboardFile = fopen(FILE_NAME_LEADERBOARD, "rb+");
+  if (leaderboardFile == NULL || getLeaderboardDataCount() == 0)
+  {
+    printf(templateIfEmpty);
+  }
+  else
+  {
+    PlayerLeaderboard pl;
+    int count = 1;
+    while (fread(&pl, sizeof(PlayerLeaderboard), 1, leaderboardFile))
+    {
+      char date[30];
+      dateToString(pl.date, date);
+      printf("╠════╬═════════════════════════════╬══════════════════╬═══════════════════════════════╬════════════════╣\n");
+      printf("║ %-2d ║ %-27s ║ $%-15d ║ %-29s ║ %02d:%02d:%02d       ║\n", count, pl.name, pl.money, date, pl.gameDuration.hours, pl.gameDuration.minutes, pl.gameDuration.seconds);
+      count++;
+    }
+    printf("╚════╩═════════════════════════════╩══════════════════╩═══════════════════════════════╩════════════════╝\n");
+  }
+  fclose(leaderboardFile);
+
+  printf("\n\nTekan ENTER untuk kembali ke main menu...");
+  waitForEnter();
+  system("cls");
+}
+
 void quitGame()
 {
   system("cls");
@@ -542,7 +801,7 @@ void renderHowToPlay()
   FILE *fp;
   char line[256];
   int i = 0;
-  fp = fopen("howtoplay.txt", "r");
+  fp = fopen(FILE_NAME_HOW_TO_PLAY, "r");
   if (fp == NULL)
   {
     printf("File hilang!\n");
@@ -921,15 +1180,6 @@ void startGame(Player *players, int *playerCount, PlayerProperty playerPropertie
   turnManager(players, playerCount, playerProperties);
   // setelah turn manager selesai, artinya game sudah selesai dan 1 pemain sudah menang
   system("cls");
-  int winner;
-  for (int i = 0; i < *playerCount; i++)
-  {
-    if (!players[i].isBankrupt)
-    {
-      winner = i;
-    }
-  }
-  renderWinner(players[winner]);
 }
 
 void renderWinner(Player p)
@@ -968,7 +1218,7 @@ void turnManager(Player *players, int *playerCount, PlayerProperty playerPropert
     }
 
     clearRenderedCard();
-    printGiliranText(players[turn]);
+    printTurnText(players[turn]);
 
     bool turnFinished = false; // untuk menandakan apakah turn sudah selesai atau belum
 
@@ -1001,9 +1251,9 @@ void turnManager(Player *players, int *playerCount, PlayerProperty playerPropert
     {
       doubleCount = 0;
       gotoxy(117, 33);
-      char teks[] = "Anda telah mendapatkan double sebanyak 3 kali.\n"
+      char text[] = "Anda telah mendapatkan double sebanyak 3 kali.\n"
                     "Anda masuk penjara!";
-      printMultiLineAlignLeft(teks, 117, 33, 7);
+      printMultiLineAlignLeft(text, 117, 33, 7);
       char selectionText[][50] = {"Lanjut"};
       int selectionIndex = playerSelectionManager(players[turn], selectionText, 0, 2, "DOUBLE_3X_PENJARA", playerProperties);
       clearArea(117, 33, 187, 35);
@@ -1030,7 +1280,7 @@ void turnManager(Player *players, int *playerCount, PlayerProperty playerPropert
     // cek apakah player sekarang bangkrut
     if (players[turn].money < 0)
     {
-      bool playerSudahBangkrut = runOutOfMoneyHandler(&players[turn], playerProperties);
+      bool playerSudahBangkrut = insufficientMoneyHandler(&players[turn], playerProperties);
       if (playerSudahBangkrut)
       {
         setPlayerAsBankrupt(&players[turn]);
@@ -1046,7 +1296,7 @@ void turnManager(Player *players, int *playerCount, PlayerProperty playerPropert
   }
 }
 
-void printGiliranText(Player p)
+void printTurnText(Player p)
 {
   clearGiliranText();
   gotoxy(117, 32);
@@ -1284,11 +1534,11 @@ void propertyHandler(Player *players, int turn, int position, PlayerProperty pla
     char selectionText[][50] = {
         "Akhiri Giliran",
         "Beli Property"};
-    int hargaBeliProperty = propertyCard->buyPrice;
+    int buyPropertyPrice = propertyCard->buyPrice;
     // kalau uang cukup untuk membeli properti
     sprintf(selectionText[1], "Beli Property ($%d)", propertyCard->buyPrice);
-    bool uangCukupUntukBeli = checkSufficientMoney(players[turn].money, hargaBeliProperty);
-    int selection = playerSelectionManager(players[turn], selectionText, uangCukupUntukBeli ? 1 : 0, 0, "AKHIRI_BELI_PROPERTY", playerProperties);
+    bool moneySufficientToBuy = checkSufficientMoney(players[turn].money, buyPropertyPrice);
+    int selection = playerSelectionManager(players[turn], selectionText, moneySufficientToBuy ? 1 : 0, 0, "AKHIRI_BELI_PROPERTY", playerProperties);
     switch (selection)
     {
     case 0:
@@ -1349,21 +1599,21 @@ void propertyHandler(Player *players, int turn, int position, PlayerProperty pla
       rentPrice = 0;
       // roll dadu untuk mengetahui berapa harga yang harus dibayar
       int rollCount = diceRollCount / 2;
-      Dice dadu;
+      Dice dice;
       for (int i = 0; i < rollCount; i++)
       {
         gotoxy(117, 33);
         printf("Sedang melempar dadu sebanyak %d kali. Harga sewa sekarang: %d", diceRollCount, rentPrice);
-        dadu = rollDice();
-        rentPrice += getTotalDice(dadu);
+        dice = rollDice();
+        rentPrice += getTotalDice(dice);
         delay(300);
       }
       clearArea(117, 33, 187, 33);
     }
     sprintf(selectionText[0], "Bayar Sewa ($%d)", rentPrice);
     sprintf(selectionText[1], "Bayar Sewa dan ambil alih ($%d)", rentPrice + takeOverPrice);
-    bool uangCukupUntukAmbilAlih = checkSufficientMoney(players[turn].money, rentPrice + takeOverPrice);
-    int selection = playerSelectionManager(players[turn], selectionText, uangCukupUntukAmbilAlih ? 1 : 0, 0, "SEWA_AMBIL_ALIH_PROPERTY", playerProperties);
+    bool moneySufficientToTakeOver = checkSufficientMoney(players[turn].money, rentPrice + takeOverPrice);
+    int selection = playerSelectionManager(players[turn], selectionText, moneySufficientToTakeOver ? 1 : 0, 0, "SEWA_AMBIL_ALIH_PROPERTY", playerProperties);
 
     switch (selection)
     {
@@ -1399,11 +1649,7 @@ void propertyHandler(Player *players, int turn, int position, PlayerProperty pla
         selectionFinished = true;
         break;
       case 1:
-        changePlayerMoney(playerProperties[position].owner, propertySellPrice);
-        playerProperties[position].owner->properties[position] = false;
-        playerProperties[position].owner = NULL;
-        playerProperties[position].level = 0;
-        renderProperty(playerProperties[position], position);
+        sellProperty(&players[turn], &playerProperties[position], position);
         selectionFinished = true;
         break;
       case 2:
@@ -1522,13 +1768,20 @@ int totalCompanyOwned(Player p)
 void buyProperty(Player *p, PlayerProperty *playerProperty, int position)
 {
   PropertyCard *propertyCard = plotList[position].propertyCard;
-  int hargaBeliProperty = propertyCard->buyPrice;
-  changePlayerMoney(p, -hargaBeliProperty);
+  int buyPropertyPrice = propertyCard->buyPrice;
+  changePlayerMoney(p, -buyPropertyPrice);
   addPropertyOwnership(p, playerProperty, position);
 }
 
 void sellProperty(Player *p, PlayerProperty *playerProperty, int position)
 {
+  /*        changePlayerMoney(playerProperties[position].owner, propertySellPrice);
+          playerProperties[position].owner->properties[position] = false;
+          playerProperties[position].owner = NULL;
+          playerProperties[position].level = 0;
+          renderProperty(playerProperties[position], position);
+          selectionFinished = true;*/
+
   PropertyCard *propertyCard = plotList[position].propertyCard;
   int hargaJualProperty = getPropertySellPrice(*playerProperty, *propertyCard); // MULTIPLIER_SELL_UNILATERALLY * (propertyCard->buyPrice + playerProperty->level * propertyCard->upgradePrice);
   changePlayerMoney(p, hargaJualProperty);
@@ -1702,8 +1955,8 @@ bool jailHandler(Player *p)
     {
       p->jailTurnsLeft = 0;
       clearPlayerSelectionText();
-      char teks[] = "Anda berhasil keluar dari penjara.";
-      printMultiLineAlignLeft(teks, 117, 33, 7);
+      char text[] = "Anda berhasil keluar dari penjara.";
+      printMultiLineAlignLeft(text, 117, 33, 7);
       char selectionText[][50] = {"Lanjut"};
       int selection = playerSelectionManager(*p, selectionText, 0, 1, "BERHASIL_KELUAR_PENJARA", NULL);
       clearPlayerSelectionText();
@@ -1713,8 +1966,8 @@ bool jailHandler(Player *p)
     {
       p->jailTurnsLeft = p->jailTurnsLeft - 1;
       clearPlayerSelectionText();
-      char teks[] = "Anda gagal keluar dari penjara.";
-      printMultiLineAlignLeft(teks, 117, 33, 7);
+      char text[] = "Anda gagal keluar dari penjara.";
+      printMultiLineAlignLeft(text, 117, 33, 7);
       char selectionText[][50] = {"Lanjut"};
       int selection = playerSelectionManager(*p, selectionText, 0, 1, "GAGAL_KELUAR_PENJARA", NULL);
       clearPlayerSelectionText();
@@ -1958,7 +2211,7 @@ bool communityChestCardHandler(Player players[], int turn, int playerCount, Play
 }
 
 // return true jika player dinyatakan bangkrut(tidak dapat membayar hingga uangnya >= 0)
-bool runOutOfMoneyHandler(Player *p, PlayerProperty playerProperties[40])
+bool insufficientMoneyHandler(Player *p, PlayerProperty playerProperties[40])
 {
   // pertama, semua property milik pemain tersebut akan di list
   // jika pemain memiliki 0 peroperti, maka langsung bangkrut
@@ -2019,7 +2272,7 @@ bool runOutOfMoneyHandler(Player *p, PlayerProperty playerProperties[40])
   {
     if (p->isBot)
     {
-      runOutOfMoneyBotHandler(p, playerProperties, totalOwnedProperty, listOwnedProperty, selectedPositions, &totalMoneyFromSelectedProperties);
+      insufficientMoneyBotHandler(p, playerProperties, totalOwnedProperty, listOwnedProperty, selectedPositions, &totalMoneyFromSelectedProperties);
     }
     else
     {
@@ -2043,14 +2296,12 @@ bool runOutOfMoneyHandler(Player *p, PlayerProperty playerProperties[40])
         {
           currentIndexPosition = rotateIndex(currentIndexPosition, totalOwnedProperty - 1, true);
           clearRenderedCard();
-          hideCursor();
           renderPropertyCard(plotList[listOwnedProperty[currentIndexPosition]].propertyCard);
         }
         else if (keyboardResult == ARROW_DOWN)
         {
           currentIndexPosition = rotateIndex(currentIndexPosition, totalOwnedProperty - 1, false);
           clearRenderedCard();
-          hideCursor();
           renderPropertyCard(plotList[listOwnedProperty[currentIndexPosition]].propertyCard);
         }
         else if (keyboardResult == KEY_SPACE)
@@ -2066,7 +2317,6 @@ bool runOutOfMoneyHandler(Player *p, PlayerProperty playerProperties[40])
             totalMoneyFromSelectedProperties -= hargaJualProperty;
           }
           // menjadikan posisiKepemilikan menjadi warna biru jika terpilih (warna 23)
-          showCursor();
           gotoxy(plotList[listOwnedProperty[currentIndexPosition]].propertyCard->ownershipCoordinate.x, plotList[listOwnedProperty[currentIndexPosition]].propertyCard->ownershipCoordinate.y);
           printWithColor(selectedPositions[currentIndexPosition] ? 23 : 7, "%s", p->symbol);
           clearArea(117, 37, 187, 37);
@@ -2196,9 +2446,9 @@ void renderPropertyCard(PropertyCard *propertyCard)
       printf("%s", propertyCardText[i]);
     }
     printCenter(propertyCard->name, 117, 15, 29, propertyCard->color);
-    char teksSewa[15];
-    sprintf(teksSewa, "Sewa $%d", propertyCard->rentPrice[0]);
-    printCenter(teksSewa, 117, 17, 29, 7);
+    char rentText[15];
+    sprintf(rentText, "Sewa $%d", propertyCard->rentPrice[0]);
+    printCenter(rentText, 117, 17, 29, 7);
     for (int i = 1; i <= 5; i++)
     {
       gotoxy(129, 18 + i);
@@ -2466,17 +2716,17 @@ int botLevelEasy(Player p, int maxIndex, int yOffset, char botContext[], PlayerP
   int result;
   if (strcmp(botContext, "AKHIRI_BELI_PROPERTY") == 0)
   {
-    int probabilities[] = {1, 1};
+    int probabilities[] = {1, 9999};
     result = randFrequency(probabilities, maxIndex);
   }
   else if (strcmp(botContext, "SEWA_AMBIL_ALIH_PROPERTY") == 0)
   {
-    int probabilities[] = {1, 0};
+    int probabilities[] = {1, 2};
     result = randFrequency(probabilities, maxIndex);
   }
   else if (strcmp(botContext, "AKHIRI_JUAL_UPGRADE_PROPERTY") == 0)
   {
-    int probabilities[] = {1, 1, 0};
+    int probabilities[] = {1, 1, 9999};
     if (p.money > plotList[p.position].propertyCard->upgradePrice)
     {
       probabilities[2] = 1;
@@ -2485,7 +2735,7 @@ int botLevelEasy(Player p, int maxIndex, int yOffset, char botContext[], PlayerP
   }
   else if (strcmp(botContext, "UPGRADE_RUMAH_PROPERTY") == 0)
   {
-    int probabilities[] = {1, 3, 1, 1, 1};
+    int probabilities[] = {1, 9999, 1, 1, 1};
     result = randFrequency(probabilities, maxIndex);
   }
   else if (strcmp(botContext, "UPGRADE_HOTEL_PROPERTY") == 0)
@@ -2734,7 +2984,7 @@ int FreeParkingBotHandler(Player *p, PlayerProperty playerProperties[40])
   return result;
 }
 
-void runOutOfMoneyBotHandler(Player *p, PlayerProperty playerProperties[40], int totalOwnedProperties, int listOwnedProperty[28], bool selectedPositions[], int *totalMoneyFromSelectedProperties)
+void insufficientMoneyBotHandler(Player *p, PlayerProperty playerProperties[40], int totalOwnedProperties, int listOwnedProperty[28], bool selectedPositions[], int *totalMoneyFromSelectedProperties)
 {
   gotoxy(117, 33);
   printf("Bot sudah memilih properti untuk dijual");
@@ -2799,18 +3049,5 @@ void shuffleSymbol(Player *players, int playerCount)
   for (int i = 0; i < playerCount; i++)
   {
     strcpy(players[i].symbol, symbols[symbolIndexes[i]]);
-  }
-}
-
-void waitForEnter()
-{
-  while (_getch() != KEY_ENTER)
-    ;
-}
-void flushInput()
-{
-  while (_kbhit())
-  {
-    _getch();
   }
 }
